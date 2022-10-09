@@ -9,14 +9,15 @@ method on the loaded `ResourceEntry` objects to export individual assets. See
 the `test_export()` function for 90% of that.
 
 **Roadmap:**
-    [X] Extract 3D models, level definitions, and other assets.
-    [ ] Modify plaintext assets and repack. (subtitles, etc.)
-    [ ] Interpret custom asset data formats. (bimage7, bwm, etc.)
-    [ ] Modify binary assets and repack. (move wall/table/chair or something)
+- [X] Extract 3D models, level definitions, and other assets.
+- [ ] Modify plaintext assets and repack. (subtitles, etc.)
+- [ ] Interpret custom asset data formats. (bimage7, bwm, etc.)
+- [ ] Modify binary assets and repack. (move wall/table/chair or something)
 
 <details>
 <summary><h3>Installation Directory</h3></summary>
 Here is an example installation directory:
+
 ```
 Dishonored2/
 └───base/
@@ -83,6 +84,7 @@ Each `.index` file can be at most `uint32 - 32` bytes long.
 
 ***Note:*** All values are big-endian unless noted.
 Here is a pseudo-code representation of the format:
+
 ```
 struct Index {
     uint8     // Type Indicator (always 0x05)
