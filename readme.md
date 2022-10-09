@@ -16,6 +16,7 @@ the `test_export()` function for 90% of that.
 
 <details>
 <summary><h3>Installation Directory</h3></summary>
+
 Here is an example installation directory:
 
 ```
@@ -49,7 +50,8 @@ in separate per region depots. So we are mostly concerned with the `.index`,
 </details>
 
 <details>
-<summary><h3>`gameN` Containers</h3></summary>
+<summary><h3>gameN Containers</h3></summary>
+
 I'm not sure what the significance of each `gameN` group is, they seem to just
 contain chunks of the game in an order that roughly matches a normal playthrough.
 
@@ -79,7 +81,8 @@ aside from the special shared resource file.
 </details>
 
 <details>
-<summary><h3>`.index` Files</h3></summary>
+<summary><h3>.index Files</h3></summary>
+
 Each `.index` file can be at most `uint32 - 32` bytes long.
 
 ***Note:*** All values are big-endian unless noted.
@@ -129,7 +132,8 @@ No idea what the first set of flags means, sometimes you see 32 in there!
 </details>
 
 <details>
-<summary><h3>`.resources` And `.sharedrsc` Files</h3></summary>
+<summary><h3>.resources And .sharedrsc Files</h3></summary>
+
 Each `.resources` file can be at most `uint64 - 4` bytes long and `.sharedrsc`
 files are identical.
 
