@@ -131,7 +131,6 @@ class ResourceEntry:
             self.flags_2,
         ) = struct.unpack(fmt, f.read(struct.calcsize(fmt)))
         self.zipped = bool(self.size != self.rsc_size)
-        self.shared = bool(self.flags_1 & 0x0020 and self.flags_2 == 0x8000)
         self.rsc_id = self.flags_2 >> 2
         assert self.does_fit(), f"Resource does not fit: {self}"
 
