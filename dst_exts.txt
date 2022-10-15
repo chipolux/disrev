@@ -1,34 +1,36 @@
-.arkfaceactor
-.arkfaceanim
-.bcloth
-.bcs
-.bimage7
-.bimage7_mip0
-.bimage7_mip1
-.bimage7_mip2
-.bimage7_mip3
-.bmd6model
-.bmodel
-.bnavmesh
-.bphysworld
-.bprobe
-.bwm
-.cfg
-.dat
-.decl
-.edgeanim
-.edgeskl
-.entities
-.hkx
-.iggy
-.iggytex
-.imp
-.lang
-.mapresources
-.maprscreusechunk0
-.massProps
-.pmodel
-.probesnetwork
-.ragdoll
-.soundpropa
-.tome
+.arkfaceactor           139 entries, 43kb to 50kb
+.arkfaceanim           1476 entries, 741b to 2mb
+.bcloth                 147 entries, 46kb to 1mb
+.bcs                      1 entries, 120kb, binary, appears to map fx to materials (contact system)
+.bimage7              19364 entries, 90b to 32mb
+.bimage7_mip0         11452 entries, 64kb to 16mb
+.bimage7_mip1          7836 entries, 128kb to 4mb
+.bimage7_mip2          3666 entries, 128kb to 1mb
+.bimage7_mip3           382 entries, 128kb to 256kb
+.bmd6model             1644 entries, 49b to 1mb
+.bmodel                5587 entries, 378b to 2mb
+.bprobe               71594 entries, 8kb to 41kb
+.dat                      3 entries, 3kb, appears to be font data
+.decl                 60567 entries, 2b to 1mb
+.edgeanim             11868 entries, 304b to 2mb
+.edgeskl                408 entries, 704b to 57kb
+.hkx                  13800 entries, 65b to 141kb
+.iggy                   247 entries, 24kb to 58mb
+.iggytex                237 entries, 0b to 14mb
+.imp                     24 entries, 0b to 330b
+.lang                    11 entries, 724kb to 1mb, text, string lookup/translation table
+.maprscreusechunk0       33 entries, 67kb to 237kb
+.massProps              705 entries, 568b
+.pmodel                 626 entries, 140b to 950kb
+.ragdoll                344 entries, 58b to 1kb
+
+# seem to be per-level
+.bnavmesh                36 entries, 99kb to 26mb, binary
+.bphysworld              36 entries, 252kb to 52mb, binary
+.bwm                     36 entries, 4mb to 200mb, binary
+.cfg                     36 entries, 13kb, text, list of parameters
+.entities                35 entries, 744kb to 39mb, text, major level definitions, where entities are, mat overrides, spawn locations, etc.
+.mapresources            38 entries, 24kb to 623kb, binary
+.probesnetwork           36 entries, 2mb to 306mb, binary
+.soundpropa              36 entries, 3kb to 30mb, binary
+.tome                    36 entries, 200kb to 95mb, binary
