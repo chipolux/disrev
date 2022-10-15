@@ -10,7 +10,7 @@ the `test_export()` function for 90% of that.
 
 **Roadmap:**
 - [X] Extract 3D models, level definitions, and other assets.
-- [ ] Modify plaintext assets and repack. (subtitles, etc.)
+- [X] Modify plaintext assets and repack. (subtitles, etc.)
 - [ ] Interpret custom asset data formats. (bimage7, bwm, etc.)
 - [ ] Modify binary assets and repack. (move wall/table/chair or something)
 

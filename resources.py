@@ -4,11 +4,12 @@ import zlib
 
 
 class ResourceContainer:
-    def __init__(self, path):
+    def __init__(self, path, explicit=False):
         """
         path = full path to <some>.index or <some>.resources file
                the game<id> will be extracted and used to build an
                entry list and accessors for the resources files.
+        explicit = force the use of the explicitly specified path as the index
         """
         path = os.path.abspath(path)
         self.dir = os.path.dirname(path)
@@ -16,7 +17,7 @@ class ResourceContainer:
         assert self.name.startswith("game"), f"Invalid container: {path}"
 
         # full paths and sizes with id as key
-        self.idx_id = 0  # indexes get overriden with later versions
+        self.idx_id = -1  # indexes get overriden with later versions
         self.idx_cache = {
             0: [os.path.join(self.dir, f"{self.name}.index"), 0],
             1: [os.path.join(self.dir, f"{self.name}_001.index"), 0],
@@ -29,7 +30,11 @@ class ResourceContainer:
         for k, v in self.idx_cache.items():
             if os.path.exists(v[0]):
                 v[1] = os.stat(v[0]).st_size
-                self.idx_id = k  # use the latest index that exists
+                if not explicit:
+                    self.idx_id = k  # use the latest index that exists
+                elif v[0] == path:
+                    self.idx_id = k  # use the exact index specified in path
+        assert self.idx_id != -1, f"Failed to find index: {path}"
 
         # full paths and sizes with id as key
         self.rsc_cache = {
@@ -68,7 +73,7 @@ class ResourceContainer:
     def does_fit(self, entry):
         return self.rsc_cache[entry.rsc_id][1] >= (entry.rsc_offset + entry.rsc_size)
 
-    def load(self, entry):
+    def read(self, entry, raw=False):
         success = True
         data = b""
         if entry.rsc_size == 0:
@@ -76,16 +81,41 @@ class ResourceContainer:
         with open(self.rsc_cache[entry.rsc_id][0], "rb") as f:
             f.seek(entry.rsc_offset)
             data = f.read(entry.rsc_size)
-        if entry.zipped:
+        if entry.zipped and not raw:
             try:
                 data = zlib.decompress(data)
             except Exception as e:
                 data = f"Failed to decompress: {e}".encode("utf-8")
                 success = False
-        if success and len(data) != entry.size:
+        if success and not raw and len(data) != entry.size:
             data = f"Retrieved data is incorrect size: {len(data)} != {entry.size}"
             success = False
         return success, data
+
+    def write(self, entry, data):
+        size = len(data)
+        rsc_size = len(data)
+        if entry.zipped:
+            co = zlib.compressobj(wbits=10)
+            data = co.compress(data)
+            data += co.flush(zlib.Z_FINISH)
+            # pad data out to match previous data size
+            data += b"\x00" * (entry.rsc_size - len(data))
+            rsc_size = len(data)
+        if rsc_size > entry.rsc_size:
+            return False
+        # write the new data into the resource file
+        with open(self.rsc_cache[entry.rsc_id][0], "r+b") as f:
+            f.seek(entry.rsc_offset)
+            f.write(data)
+        # update the index if our data size changed
+        if size != entry.size or rsc_size != entry.rsc_size:
+            entry.size = size
+            entry.rsc_size = rsc_size
+            with open(self.idx_cache[self.idx_id][0], "r+b") as f:
+                f.seek(entry.idx_offset)
+                f.write(entry.bytes())
+        return True
 
     def export(self, entry, path=None, dry_run=False):
         if entry.rsc_size == 0 or not entry.dst:
@@ -97,7 +127,7 @@ class ResourceContainer:
         path = os.path.abspath(path)
         if os.path.exists(path):
             return True
-        success, data = self.load(entry)
+        success, data = self.read(entry)
         if success and not dry_run:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
@@ -122,11 +152,12 @@ class ResourceEntry:
             name = f.read(name_size).decode("utf-8")
             setattr(self, k, name)
             setattr(self, f"{k}_basename", os.path.basename(name))
-        fmt = ">QLL6xHH"
+        fmt = ">QLL6sHH"
         (
             self.rsc_offset,
             self.size,
             self.rsc_size,
+            self.unk,
             self.flags_1,
             self.flags_2,
         ) = struct.unpack(fmt, f.read(struct.calcsize(fmt)))
@@ -134,11 +165,36 @@ class ResourceEntry:
         self.rsc_id = self.flags_2 >> 2
         assert self.does_fit(), f"Resource does not fit: {self}"
 
+    def bytes(self):
+        return b"".join(
+            (
+                struct.pack(">L", self.id),
+                struct.pack("<L", len(self.type)),
+                self.type.encode("utf-8"),
+                struct.pack("<L", len(self.src)),
+                self.src.encode("utf-8"),
+                struct.pack("<L", len(self.dst)),
+                self.dst.encode("utf-8"),
+                struct.pack(
+                    ">QLL6sHH",
+                    self.rsc_offset,
+                    self.size,
+                    self.rsc_size,
+                    self.unk,
+                    self.flags_1,
+                    self.flags_2,
+                ),
+            )
+        )
+
     def does_fit(self):
         return self.container.does_fit(self)
 
-    def load(self):
-        return self.container.load(self)
+    def read(self, raw=False):
+        return self.container.read(self, raw)
+
+    def write(self, data):
+        return self.container.write(self, data)
 
     def export(self, path=None, dry_run=False):
         return self.container.export(self, path, dry_run)
@@ -153,12 +209,15 @@ def test_export(container):
 
 
 if __name__ == "__main__":
-    base_dir = "C:\\Steam\\steamapps\\common\\Dishonored2\\base"
-    print("Loading known containers...")
-    containers = [
-        ResourceContainer(os.path.join(base_dir, "game1.index")),
-        ResourceContainer(os.path.join(base_dir, "game2.index")),
-        ResourceContainer(os.path.join(base_dir, "game3.index")),
-        ResourceContainer(os.path.join(base_dir, "game4.index")),
-    ]
-    print(f"Done!")
+    # this is the first line of subtitles for the regular campaign (not tutorial)
+    old_str = b"Why do we celebrate the anniversary of an assassination?"
+    new_str = b"WE HAVE LIFTOFF MY FRIENDS!"
+    container = ResourceContainer(
+        "C:\\Steam\\steamapps\\common\\Dishonored2\\base\\game1.index"
+    )
+    for entry in container.entries:
+        if entry.dst.endswith("english_m.lang"):
+            break
+    old_data = entry.read()[1]
+    new_data = old_data.replace(old_str, new_str)
+    entry.write(new_data)
