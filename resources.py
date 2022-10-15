@@ -165,6 +165,14 @@ class ResourceEntry:
         self.rsc_id = self.flags_2 >> 2
         assert self.does_fit(), f"Resource does not fit: {self}"
 
+    @property
+    def src_ext(self):
+        return os.path.splitext(self.src)[1]
+
+    @property
+    def dst_ext(self):
+        return os.path.splitext(self.dst)[1]
+
     def bytes(self):
         return b"".join(
             (
@@ -203,21 +211,36 @@ class ResourceEntry:
         return f"<ResourceEntry(type={self.type}, src={self.src_basename}, dst={self.dst_basename})>"
 
 
+def filter_entries(func, containers):
+    for c in containers:
+        for e in c.entries:
+            if func(e):
+                yield e
+
+
 def test_export(container):
     for entry in container.entries:
         assert entry.export(dry_run=True), f"Failed to export {entry}!"
 
 
-if __name__ == "__main__":
+def test_modify_subtitles(container):
+    """Pass in game1.index based container."""
     # this is the first line of subtitles for the regular campaign (not tutorial)
     old_str = b"Why do we celebrate the anniversary of an assassination?"
     new_str = b"WE HAVE LIFTOFF MY FRIENDS!"
-    container = ResourceContainer(
-        "C:\\Steam\\steamapps\\common\\Dishonored2\\base\\game1.index"
-    )
     for entry in container.entries:
         if entry.dst.endswith("english_m.lang"):
             break
     old_data = entry.read()[1]
     new_data = old_data.replace(old_str, new_str)
     entry.write(new_data)
+
+
+if __name__ == "__main__":
+    base_path = "C:\\Steam\\steamapps\\common\\Dishonored2\\base"
+    containers = [
+        ResourceContainer(os.path.join(base_path, "game1.index")),
+        ResourceContainer(os.path.join(base_path, "game2.index")),
+        ResourceContainer(os.path.join(base_path, "game3.index")),
+        ResourceContainer(os.path.join(base_path, "game4.index")),
+    ]
