@@ -2,6 +2,8 @@ import os
 import struct
 import zlib
 
+import entlib
+
 
 class ResourceContainer:
     def __init__(self, path, explicit=False):
@@ -77,7 +79,7 @@ class ResourceContainer:
         success = True
         data = b""
         if entry.rsc_size == 0:
-            return success, data
+            return data
         with open(self.rsc_cache[entry.rsc_id][0], "rb") as f:
             f.seek(entry.rsc_offset)
             data = f.read(entry.rsc_size)
@@ -85,12 +87,12 @@ class ResourceContainer:
             try:
                 data = zlib.decompress(data)
             except Exception as e:
-                data = f"Failed to decompress: {e}".encode("utf-8")
-                success = False
+                raise Exception(f"Failed to decompress: {e}")
         if success and not raw and len(data) != entry.size:
-            data = f"Retrieved data is incorrect size: {len(data)} != {entry.size}"
-            success = False
-        return success, data
+            raise Exception(
+                f"Retrieved data is incorrect size: {len(data)} != {entry.size}"
+            )
+        return data
 
     def write(self, entry, data):
         size = len(data)
@@ -127,8 +129,8 @@ class ResourceContainer:
         path = os.path.abspath(path)
         if os.path.exists(path):
             return True
-        success, data = self.read(entry)
-        if success and not dry_run:
+        data = self.read(entry)
+        if not dry_run:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
                 f.write(data)
@@ -207,8 +209,37 @@ class ResourceEntry:
     def export(self, path=None, dry_run=False):
         return self.container.export(self, path, dry_run)
 
+    def entities(self):
+        if self.dst_ext != ".entities":
+            return None
+        return entlib.load_entities(self.read())
+
     def __repr__(self):
         return f"<ResourceEntry(type={self.type}, src={self.src_basename}, dst={self.dst_basename})>"
+
+
+class MapResources:
+    def __init__(self, path, data=None):
+        if data is None:
+            with open(path, "rb") as f:
+                data = f.read()
+        assert len(data) >= 12, f".mapresources files must be at least 12 bytes!"
+        # TODO: what are the first 8 bytes of the header?
+        self.header_unk = data[:8]
+        self.entry_count = struct.unpack(">L", data[8:12])[0]
+        self.entries = []
+        for i in range(self.entry_count):
+            offset = 12 + (28 * i)
+            self.entries.append(
+                {
+                    "offset": offset,
+                    # sometimes there are multiple entries that have the same
+                    # id, but they always appear to be images (base w/ mip levels)
+                    "id": struct.unpack(">L", data[offset : offset + 4])[0],
+                    # TODO: this data seems to all be identical between entries
+                    "data": data[offset + 4 : offset + 28],
+                }
+            )
 
 
 def filter_entries(func, containers):
@@ -231,14 +262,13 @@ def test_modify_subtitles(container):
     for entry in container.entries:
         if entry.dst.endswith("english_m.lang"):
             break
-    old_data = entry.read()[1]
+    old_data = entry.read()
     new_data = old_data.replace(old_str, new_str)
     entry.write(new_data)
 
 
-if __name__ == "__main__":
-    base_path = "C:\\Steam\\steamapps\\common\\Dishonored2\\base"
-    containers = [
+def load_containers(base_path="C:\\Steam\\steamapps\\common\\Dishonored2\\base"):
+    return [
         ResourceContainer(os.path.join(base_path, "game1.index")),
         ResourceContainer(os.path.join(base_path, "game2.index")),
         ResourceContainer(os.path.join(base_path, "game3.index")),
