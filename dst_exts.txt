@@ -30,7 +30,7 @@
 .bwm                     36 entries, 4mb to 200mb, binary
 .cfg                     36 entries, 13kb, text, list of parameters
 .entities                35 entries, 744kb to 39mb, text, major level definitions, where entities are, mat overrides, spawn locations, etc.
-.mapresources            38 entries, 24kb to 623kb, binary
+.mapresources            38 entries, 24kb to 623kb, binary, 12 byte header, 28 byte entries, indexes into resource files?
 .probesnetwork           36 entries, 2mb to 306mb, binary
 .soundpropa              36 entries, 3kb to 30mb, binary
 .tome                    36 entries, 200kb to 95mb, binary
