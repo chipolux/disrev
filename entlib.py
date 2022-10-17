@@ -161,29 +161,47 @@ def to_list(obj):
     return values
 
 
+def kiscules(ents):
+    ks = []
+    for k, e in ents.items():
+        try:
+            ks.append(Kiscule(k, e))
+        except:
+            continue
+    return ks
+
+
 class Kiscule:
     def __init__(self, key, ent):
+        self.id = key
         self.cls = ent["class"]
         self.inherit = ent["inherit"]
-        self.id = key
-        assert self.cls == "idEntity" and self.inherit.endswith(
-            "kiscule_node_template.def"
-        ), f"Invalid entity {self.id}, {self.cls}, {self.inherit}!"
         self.component_decls = ent["edit"]["m_componentDecls"]
         kiscule = ent["edit"]["m_kiscule"]
-        self.version = kiscule["m_version"]
+        self.version = kiscule.get("m_version", None)
         self.nodes = [KisculeNode(x) for x in to_list(kiscule["m_nodes"])]
-        self.variables = to_list(kiscule["m_variables"])
+        try:
+            self.variables = to_list(kiscule["m_variables"])
+        except KeyError:
+            self.variables = []
 
     def __repr__(self):
         return f"<Kiscule({self.id}, nodes={len(self.nodes)}, vars={len(self.nodes)})>"
 
 
 class KisculeNode:
+
+    # these are all the known connection point types, i've grouped them based
+    # on whether they seem to be used for control flow or data access
+    CONTROL_INPUTS = ("InputEvent", "InputRegular")
+    DATA_INPUTS = ("InputVariable",)
+    CONTROL_OUTPUTS = ("OutputNotification", "OutputRegular")
+    DATA_OUTPUTS = ("OutputVariable",)
+
     def __init__(self, obj):
         self.id = obj["m_id"]
         self.name = obj["m_name"]
-        self.pos = obj["m_nodePos"]
+        self.pos = obj.get("m_nodePos", {})
         self.parameters = obj.get("m_parameters", {})
         self.connection_points = to_list(obj["m_connectionPoints"])
         self.keys = list(obj.keys())
@@ -192,9 +210,9 @@ class KisculeNode:
         self.connected_inputs = []
         for c in self.connection_points:
             t = c["m_type"]
-            if t.startswith("Output") and "m_connections" in c:
+            if t in self.CONTROL_OUTPUTS and "m_connections" in c:
                 self.connected_outputs.append(c["m_id"])
-            if t.startswith("Input") and "m_connections" in c:
+            if t in self.CONTROL_INPUTS and "m_connections" in c:
                 self.connected_inputs.append(c["m_id"])
 
     def __repr__(self):
