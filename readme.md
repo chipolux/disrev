@@ -85,8 +85,9 @@ aside from the special shared resource file.
 
 Each `.index` file can be at most `uint32 - 32` bytes long.
 
-***Note:*** All values are big-endian unless noted.
 Here is a pseudo-code representation of the format:
+
+***Note:*** All values are big-endian unless noted.
 
 ```
 struct Index {
@@ -156,4 +157,23 @@ size and can be written out or viewed however you like.
 There are a ton of files packed in that are plaintext (shader definitions, subtitles,
 parameters), but the vast majority of the data is binary files, I will document
 their formats as I interpret them.
+</details>
+
+<details>
+<summary><h3>.entities Files</h3></summary>
+
+Each map in the game has a matching `.entities` file. These are plaintext files
+that seem to be the core of each level.
+
+They control:
+
+* World configuration. (environment, skybox, load params, ai params, etc.)
+* Player setup information.
+* All dynamic assets. (lights, clutter, chains, gates, visual and audio fx, phys objs, etc.)
+* Encounter/scenario logic. (kiscule diagram definitions that get run during gameplay)
+* HUD elements. (mission markers at least)
+
+I have written a simple parser for them in `entlib.py`.
+
+[See a more detailed description of the file format here.](formats/entities.md)
 </details>

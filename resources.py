@@ -95,6 +95,10 @@ class ResourceContainer:
         return data
 
     def write(self, entry, data):
+        if not isinstance(data, (bytes, bytearray)):
+            # user passed a path we need to read
+            with open(data, "rb") as f:
+                data = f.read()
         size = len(data)
         rsc_size = len(data)
         if entry.zipped:
@@ -119,22 +123,26 @@ class ResourceContainer:
                 f.write(entry.bytes())
         return True
 
-    def export(self, entry, path=None, dry_run=False):
+    def export(self, entry, path=None, explicit=False, dry_run=False):
         if entry.rsc_size == 0 or not entry.dst:
             return True
-        if path:
+        if path is None and explicit == True:
+            raise Exception("No path provided for explicit export!")
+        if path and not explicit:
             path = os.path.join(path, entry.dst)
-        else:
+        elif not explicit:
             path = entry.dst
         path = os.path.abspath(path)
-        if os.path.exists(path):
+        if os.path.exists(path) and explicit:
+            raise Exception(f"Explicit export path already exists: {path}")
+        elif os.path.exists(path):
             return True
         data = self.read(entry)
         if not dry_run:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
                 f.write(data)
-        return success
+        return True
 
     def __repr__(self):
         return f"<ResourceContainer(name={self.name}, idx_id={self.idx_id}, entries={self.entry_count})>"
@@ -206,8 +214,8 @@ class ResourceEntry:
     def write(self, data):
         return self.container.write(self, data)
 
-    def export(self, path=None, dry_run=False):
-        return self.container.export(self, path, dry_run)
+    def export(self, path=None, explicit=False, dry_run=False):
+        return self.container.export(self, path, explicit, dry_run)
 
     def entities(self):
         if self.dst_ext != ".entities":

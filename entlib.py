@@ -37,8 +37,8 @@ def load_entities(path):
 
 
 def _parse_entities(f):
-    header = f.read(10)
-    assert header == b"Version 6\n", "Invalid data, unrecognized header!"
+    header = f.read(9)
+    assert header == b"Version 6", f"Invalid data, unrecognized header: {header}"
     buff = f.read(1024)
     escape_next_char = False
     in_string = False
@@ -117,7 +117,7 @@ def _parse_value(token):
     if c in STRING_CHANGE:
         token = bytes(token)
         try:
-            return token.decode("utf-8")
+            return token[1:-1].decode("utf-8")
         except UnicodeDecodeError:
             return token
     # NOTE: some fields use values with units (200m, 2.5km) so leave them alone
@@ -146,6 +146,56 @@ def filter_nearby(ent, ents, distance=2):
     if pos1 is None:
         return nearby
     for e in ents.values():
+        if e["entity_id"] == ent["entity_id"]:
+            continue
         if are_nearby(pos1, spawn_pos(e), distance):
             nearby.append(e)
     return nearby
+
+
+def to_list(obj):
+    num = int(obj["num"])
+    values = []
+    for i in range(num):
+        values.append(obj[f"item[{i}]"])
+    return values
+
+
+class Kiscule:
+    def __init__(self, key, ent):
+        self.cls = ent["class"]
+        self.inherit = ent["inherit"]
+        self.id = key
+        assert self.cls == "idEntity" and self.inherit.endswith(
+            "kiscule_node_template.def"
+        ), f"Invalid entity {self.id}, {self.cls}, {self.inherit}!"
+        self.component_decls = ent["edit"]["m_componentDecls"]
+        kiscule = ent["edit"]["m_kiscule"]
+        self.version = kiscule["m_version"]
+        self.nodes = [KisculeNode(x) for x in to_list(kiscule["m_nodes"])]
+        self.variables = to_list(kiscule["m_variables"])
+
+    def __repr__(self):
+        return f"<Kiscule({self.id}, nodes={len(self.nodes)}, vars={len(self.nodes)})>"
+
+
+class KisculeNode:
+    def __init__(self, obj):
+        self.id = obj["m_id"]
+        self.name = obj["m_name"]
+        self.pos = obj["m_nodePos"]
+        self.parameters = obj.get("m_parameters", {})
+        self.connection_points = to_list(obj["m_connectionPoints"])
+        self.keys = list(obj.keys())
+
+        self.connected_outputs = []
+        self.connected_inputs = []
+        for c in self.connection_points:
+            t = c["m_type"]
+            if t.startswith("Output") and "m_connections" in c:
+                self.connected_outputs.append(c["m_id"])
+            if t.startswith("Input") and "m_connections" in c:
+                self.connected_inputs.append(c["m_id"])
+
+    def __repr__(self):
+        return f"<KisculeNode({self.id}, {self.name})>"
