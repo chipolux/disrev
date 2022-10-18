@@ -88,10 +88,6 @@ class ResourceContainer:
                 data = zlib.decompress(data)
             except Exception as e:
                 raise Exception(f"Failed to decompress: {e}")
-        if success and not raw and len(data) != entry.size:
-            raise Exception(
-                f"Retrieved data is incorrect size: {len(data)} != {entry.size}"
-            )
         return data
 
     def write(self, entry, data):
