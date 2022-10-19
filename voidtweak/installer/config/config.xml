@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>VoidTweak</Name>
+    <Version>2022</Version>
+    <Title>VoidTweak Installer</Title>
+    <Publisher>nakyle.com</Publisher>
+    <StartMenuDir>VoidTweak</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/VoidTweak</TargetDir>
+</Installer>

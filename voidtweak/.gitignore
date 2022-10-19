@@ -1,0 +1,8 @@
+# qt creator files
+build*/
+*.user
+.qmake.stash
+
+# installer files
+installer/packages/com.nakyle.voidtweak/data/*
+installer/*Installer.exe
