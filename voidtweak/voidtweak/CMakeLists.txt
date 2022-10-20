@@ -21,8 +21,12 @@ find_package(Qt6 COMPONENTS ${QT_MODULES} REQUIRED)
 list(TRANSFORM QT_MODULES PREPEND Qt${QT_VERSION_MAJOR}::)
 
 set(PROJECT_SOURCES
+    container.cpp
+    container.h
     core.cpp
     core.h
+    entry.cpp
+    entry.h
     main.cpp
     qtutils.cpp
     qtutils.h
