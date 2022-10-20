@@ -7,8 +7,8 @@ namespace zutils
 {
 
 // odd names to avoid collisions with zlib and qt/zlib globals
-QByteArray deflt(QByteArray &input);
-QByteArray inflt(QByteArray &input);
+bool deflt(QByteArray &input, QByteArray &output);
+bool inflt(QByteArray &input, QByteArray &output);
 
 } // namespace zutils
 

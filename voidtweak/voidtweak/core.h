@@ -5,30 +5,7 @@
 #include <QtQml>
 
 #include "qtutils.h"
-
-class ResourceManager;
-
-class SearchResult : public QObject
-{
-    Q_OBJECT
-
-  public:
-    explicit SearchResult(const quint32 &id, const QString &src, const QString &dst,
-                          const quint32 &size, QObject *parent)
-        : QObject(parent)
-        , m_id(id)
-        , m_src(src)
-        , m_dst(dst)
-        , m_size(size)
-    {
-    }
-
-  private:
-    RO_PROP(quint32, id)
-    RO_PROP(QString, src)
-    RO_PROP(QString, dst)
-    RO_PROP(quint32, size)
-};
+#include "resourcemanager.h"
 
 class Core : public QObject
 {
@@ -36,13 +13,20 @@ class Core : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("Backend only.")
 
+    Q_PROPERTY(int resultCount READ resultCount NOTIFY resultsChanged)
+    Q_PROPERTY(QList<Entry *> results READ results NOTIFY resultsChanged)
+
   public:
     explicit Core(QObject *parent = nullptr);
     ~Core();
+    const int &resultCount() const { return m_resultCount; }
+    const QList<Entry *> &results() const { return m_results; }
 
   signals:
     void startLoadingIndexes();
     void startSearch(const QString &query);
+    void resultsChanged();
+    void startExtraction(Entry *entry);
 
   public slots:
     void loadIndexes()
@@ -65,23 +49,23 @@ class Core : public QObject
     {
         if (!m_loading) {
             setError({});
-            setResultCount(0);
+            m_resultCount = 0;
             qDeleteAllLater(m_results);
-            emit resultsChanged(m_results);
+            emit resultsChanged();
         }
     }
 
   private slots:
-    void searchResult(quint32 id, QString src, QString dst, quint32 size)
+    void searchResult(QPointer<Entry> entry)
     {
-        setResultCount(m_resultCount + 1);
-        if (m_results.count() < 200) {
-            m_results.append(new SearchResult(id, src, dst, size, this));
-            emit resultsChanged(m_results);
-        } else {
-            setError(u"Too many results, only displaying first 200."_qs);
-        }
+        m_resultCount++;
+        // we let the ResourceManager keep ownership of the Container and Entry
+        // dataset, but since it lives in another thread we make a copy of the
+        // Entry's we wish to show in the UI
+        m_results.append(new Entry(entry, this));
+        m_searchResultDebounce->start();
     }
+    void extractResult(const QPointer<Entry>, QByteArray) {}
 
   private:
     RW_PROP(QString, error, setError);
@@ -89,11 +73,12 @@ class Core : public QObject
 
     RW_PROP(int, containerCount, setContainerCount);
     RW_PROP(int, entryCount, setEntryCount);
-    RW_PROP(int, resultCount, setResultCount);
-    RO_PROP(QList<SearchResult *>, results);
+    int m_resultCount;
+    QList<Entry *> m_results;
 
     QPointer<ResourceManager> m_rm;
     QThread *m_rmThread;
+    QTimer *m_searchResultDebounce;
 };
 
 #endif // CORE_H

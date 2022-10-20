@@ -7,12 +7,12 @@
 
 using namespace zutils;
 
-QByteArray zutils::deflt(QByteArray &input)
+bool zutils::deflt(QByteArray &input, QByteArray &output)
 {
     int ret;
     z_Bytef buffer[ZLIB_CHUNK];
-    QByteArray output;
     z_stream stream;
+    output.clear();
 
     stream.zalloc = Z_NULL;
     stream.zfree = Z_NULL;
@@ -20,7 +20,7 @@ QByteArray zutils::deflt(QByteArray &input)
     ret = deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 10, 8, Z_DEFAULT_STRATEGY);
     if (ret != Z_OK) {
         qWarning() << "Failed to initialize zlib deflate:" << ret;
-        return output;
+        return false;
     }
 
     stream.next_in = reinterpret_cast<z_Bytef *>(input.data());
@@ -32,22 +32,22 @@ QByteArray zutils::deflt(QByteArray &input)
         if (stream.avail_out < ZLIB_CHUNK) {
             output.append(reinterpret_cast<char *>(buffer), ZLIB_CHUNK - stream.avail_out);
         }
-    } while (ret == Z_OK);
+    } while (ret == Z_OK || ret == Z_BUF_ERROR);
     deflateEnd(&stream);
 
     if (ret != Z_STREAM_END) {
         qWarning() << "Failed to deflate:" << ret;
         output.resize(0);
     }
-    return output;
+    return ret == Z_STREAM_END;
 }
 
-QByteArray zutils::inflt(QByteArray &input)
+bool zutils::inflt(QByteArray &input, QByteArray &output)
 {
     int ret;
     z_Bytef buffer[ZLIB_CHUNK];
-    QByteArray output;
     z_stream stream;
+    output.clear();
 
     stream.zalloc = Z_NULL;
     stream.zfree = Z_NULL;
@@ -55,7 +55,7 @@ QByteArray zutils::inflt(QByteArray &input)
     ret = inflateInit2(&stream, 10);
     if (ret != Z_OK) {
         qWarning() << "Failed to initialize zlib inflate:" << ret;
-        return output;
+        return false;
     }
 
     stream.next_in = reinterpret_cast<z_Bytef *>(input.data());
@@ -67,12 +67,12 @@ QByteArray zutils::inflt(QByteArray &input)
         if (stream.avail_out < ZLIB_CHUNK) {
             output.append(reinterpret_cast<char *>(buffer), ZLIB_CHUNK - stream.avail_out);
         }
-    } while (ret == Z_OK);
+    } while (ret == Z_OK || ret == Z_BUF_ERROR);
     inflateEnd(&stream);
 
     if (ret != Z_STREAM_END) {
         qWarning() << "Failed to inflate:" << ret << stream.msg;
         output.resize(0);
     }
-    return output;
+    return ret == Z_STREAM_END;
 }

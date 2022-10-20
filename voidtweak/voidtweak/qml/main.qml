@@ -12,56 +12,20 @@ ApplicationWindow {
     title: `${Qt.application.displayName} (v${Qt.application.version})`
     color: "#333"
 
-    function formatBytes(bytes) {
-        var size = bytes
-        var unit = "B"
-        if (bytes > 1024 * 1024 * 1024) {
-            size = Number(bytes / 1024 / 1024 / 1024).toFixed(1)
-            unit = "gb"
-        } else if (bytes > 1024 * 1024) {
-            size = Number(bytes / 1024 / 1024).toFixed(1)
-            unit = "mb"
-        } else if (bytes > 1024) {
-            size = Math.floor(bytes / 1024)
-            unit = "kb"
-        }
-        return `${size} ${unit}`
-    }
-
     ListView {
         id: resultsList
         model: core.results
         spacing: 2
-        anchors.top: controlColumn.bottom
+        boundsBehavior: ListView.StopAtBounds
+        anchors.top: searchStatusLabel.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: errorLabel.top
         anchors.margins: 5
 
-        delegate: Rectangle {
+        delegate: EntryListItem {
             width: ListView.view.width
-            height: 80
-            color: index % 2 ? "#555" : "#444"
-            radius: 4
-
-            Column {
-                spacing: 5
-                anchors.fill: parent
-                anchors.margins: 10
-
-                Label {
-                    text: `<b>Source:</b> ${modelData.src}`
-                    color: "#DDD"
-                }
-                Label {
-                    text: `<b>Destination:</b> ${modelData.dst}`
-                    color: "#DDD"
-                }
-                Label {
-                    text: `<b>Size:</b> ${formatBytes(modelData.size)}`
-                    color: "#DDD"
-                }
-            }
+            entry: modelData
         }
     }
 
@@ -99,44 +63,50 @@ ApplicationWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.topMargin: -20
+        anchors.topMargin: -10
     }
 
-    Column {
-        id: controlColumn
-        spacing: 5
-        anchors.top: parent.top
+    TextField {
+        id: searchInput
+        placeholderText: "Search in source and destination..."
+        width: parent.width
+        enabled: !core.loading
         anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.right: loadIndexesButton.left
+        anchors.top: parent.top
         anchors.margins: 5
 
-        Button {
-            text: core.loading ? "Loading Indexes..." : "Load Indexes"
-            enabled: !core.loading
-            anchors.horizontalCenter: parent.horizontalCenter
+        onAccepted: core.search(text)
+    }
 
-            onClicked: core.loadIndexes()
-        }
+    Button {
+        id: loadIndexesButton
+        height: searchInput.height
+        text: "Load Indexes"
+        enabled: !core.loading
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 5
 
-        Label {
-            text: `Loaded ${core.entryCount} entries from ${core.containerCount} containers.`
-            color: "#DDD"
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
+        onClicked: core.loadIndexes()
+    }
 
-        TextField {
-            placeholderText: "Search in source and destination..."
-            width: parent.width
-            enabled: !core.loading
+    Label {
+        id: searchStatusLabel
+        text: `Found ${core.resultCount} results...`
+        color: "#DDD"
+        anchors.left: parent.left
+        anchors.top: searchInput.bottom
+        anchors.margins: 5
+    }
 
-            onAccepted: core.search(text)
-        }
-
-        Label {
-            text: `Found ${core.resultCount} results...`
-            color: "#DDD"
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
+    Label {
+        id: indexStatusLabel
+        text: `Loaded ${core.entryCount} entries from ${core.containerCount} indexes.`
+        color: "#DDD"
+        anchors.right: parent.right
+        anchors.top: loadIndexesButton.bottom
+        anchors.margins: 5
     }
 
     Label {
