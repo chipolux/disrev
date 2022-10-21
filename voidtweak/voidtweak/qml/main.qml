@@ -1,6 +1,9 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import voidtweak
 
 ApplicationWindow {
     id: rootWindow
@@ -26,6 +29,11 @@ ApplicationWindow {
         delegate: EntryListItem {
             width: ListView.view.width
             entry: modelData
+
+            onMenuRequested: {
+                contextMenu.entry = modelData
+                contextMenu.popup()
+            }
         }
     }
 
@@ -117,5 +125,48 @@ ApplicationWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.margins: 5
+    }
+
+    Menu {
+        id: contextMenu
+
+        property Entry entry
+
+        MenuItem {
+            text: "Export"
+            onTriggered: {
+                fileDialog.entry = contextMenu.entry
+                fileDialog.fileMode = FileDialog.SaveFile
+                fileDialog.selectedFile = contextMenu.entry.dstFileName
+                fileDialog.open()
+            }
+        }
+        MenuItem {
+            text: "Import"
+            onTriggered: {
+                fileDialog.entry = contextMenu.entry
+                fileDialog.fileMode = FileDialog.OpenFile
+                fileDialog.open()
+            }
+        }
+    }
+
+    FileDialog {
+        id: fileDialog
+        currentFolder: StandardPaths.writableLocation(
+                           StandardPaths.HomeLocation)
+
+        property Entry entry
+
+        onAccepted: {
+            if (fileDialog.fileMode === FileDialog.SaveFile
+                    && !!fileDialog.entry) {
+                core.exportEntry(fileDialog.entry, fileDialog.selectedFile)
+            }
+            if (fileDialog.fileMode === FileDialog.OpenFile
+                    && !!fileDialog.entry) {
+                core.importEntry(fileDialog.entry, fileDialog.selectedFile)
+            }
+        }
     }
 }

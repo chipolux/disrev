@@ -27,7 +27,9 @@ class Core : public QObject
     void startLoadingIndexes();
     void startSearch(const QString &query);
     void resultsChanged();
-    void startExtraction(Entry *entry);
+    void extractEntry(Entry *entry);
+    void exportEntry(Entry *entry, QUrl path);
+    void importEntry(Entry *entry, QUrl path);
 
   public slots:
     void loadIndexes()

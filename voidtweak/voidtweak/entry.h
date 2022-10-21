@@ -25,11 +25,18 @@ class Entry : public QObject
     MBC_PROP(quint16, flags1)
     MBC_PROP(quint16, flags2)
 
+    Q_PROPERTY(QString srcSuffix READ srcSuffix CONSTANT)
+    Q_PROPERTY(QString dstSuffix READ dstSuffix CONSTANT)
+    Q_PROPERTY(QString srcFileName READ srcFileName CONSTANT)
+    Q_PROPERTY(QString dstFileName READ dstFileName CONSTANT)
+
   public:
     explicit Entry(const int &container, QObject *parent);
     explicit Entry(QPointer<Entry> other, QObject *parent);
     QString srcSuffix() const { return QFileInfo(src).suffix(); }
     QString dstSuffix() const { return QFileInfo(dst).suffix(); }
+    QString srcFileName() const { return QFileInfo(src).fileName(); }
+    QString dstFileName() const { return QFileInfo(dst).fileName(); }
 };
 QDebug operator<<(QDebug d, const Entry *e);
 

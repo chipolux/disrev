@@ -3,10 +3,13 @@ import QtQuick.Controls
 import voidtweak
 
 Rectangle {
+    id: control
     implicitWidth: 200
     implicitHeight: 80
     color: index % 2 ? "#555" : "#444"
     radius: 4
+
+    signal menuRequested
 
     property Entry entry
 
@@ -83,8 +86,13 @@ Rectangle {
     }
 
     MouseArea {
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         anchors.fill: parent
 
-        onClicked: core.startExtraction(entry)
+        onClicked: function (event) {
+            if (event.button === Qt.RightButton) {
+                control.menuRequested()
+            }
+        }
     }
 }

@@ -14,7 +14,9 @@ Core::Core(QObject *parent)
     connect(m_rmThread, &QThread::finished, m_rm, &QObject::deleteLater);
     connect(this, &Core::startLoadingIndexes, m_rm, &ResourceManager::loadIndexes);
     connect(this, &Core::startSearch, m_rm, &ResourceManager::search);
-    connect(this, &Core::startExtraction, m_rm, &ResourceManager::extract);
+    connect(this, &Core::extractEntry, m_rm, &ResourceManager::extractEntry);
+    connect(this, &Core::exportEntry, m_rm, &ResourceManager::exportEntry);
+    connect(this, &Core::importEntry, m_rm, &ResourceManager::importEntry);
     connect(m_rm, &ResourceManager::errorOccured, this, &Core::setError);
     connect(m_rm, &ResourceManager::loadingFinished, this, [&]() { setLoading(false); });
     connect(m_rm, &ResourceManager::containersLoaded, this, &Core::setContainerCount);

@@ -28,13 +28,20 @@ class ResourceManager : public QObject
   public slots:
     void loadIndexes();
     void search(const QString &query);
-    void extract(const QPointer<Entry> ref);
+    void extractEntry(const QPointer<Entry> ref);
+    void exportEntry(const QPointer<Entry> ref, QUrl path);
+    void importEntry(const QPointer<Entry> ref, QUrl path);
 
   private:
     QList<Container *> m_containers;
 
     bool loadMasterIndex();
     bool loadChildIndexes();
+
+    const Container *container(const QPointer<Entry> ref);
+    const Entry *entry(const Container *c, const QPointer<Entry> ref);
+    bool extract(const QPointer<Entry> ref, QByteArray &data);
+    bool insert(const QPointer<Entry> ref, QByteArray &data);
 };
 
 #endif // RESOURCEMANAGER_H

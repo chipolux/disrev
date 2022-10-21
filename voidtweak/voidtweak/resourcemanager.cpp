@@ -126,7 +126,7 @@ bool ResourceManager::loadChildIndexes()
 {
     for (int ci = 0; ci < m_containers.count(); ci++) {
         Container *c = m_containers[ci];
-        QFile f(c->pathAbsolute());
+        QFile f(c->indexPath());
         if (!f.open(QFile::ReadOnly)) {
             qWarning() << "Failed to open:" << f.fileName();
             emit errorOccured(u"Failed to open: %1"_qs.arg(f.fileName()));
@@ -198,7 +198,44 @@ void ResourceManager::search(const QString &query)
     emit loadingFinished();
 }
 
-void ResourceManager::extract(const QPointer<Entry> ref)
+void ResourceManager::extractEntry(const QPointer<Entry> ref)
+{
+    QByteArray output;
+    if (extract(ref, output)) {
+        emit extractResult(ref, output);
+    }
+}
+
+void ResourceManager::exportEntry(const QPointer<Entry> ref, QUrl path)
+{
+    QByteArray output;
+    if (!extract(ref, output))
+        return;
+
+    QFile f(path.toLocalFile());
+    if (!f.open(QFile::WriteOnly)) {
+        emit errorOccured(u"Failed to open file: %1"_qs.arg(f.fileName()));
+        return;
+    }
+    f.write(output);
+    f.close();
+}
+
+void ResourceManager::importEntry(const QPointer<Entry> ref, QUrl path)
+{
+    QByteArray data;
+    QFile f(path.toLocalFile());
+    if (f.open(QFile::ReadOnly)) {
+        data = f.readAll();
+        f.close();
+    } else {
+        emit errorOccured(u"Failed to open file: %1"_qs.arg(f.fileName()));
+        return;
+    }
+    insert(ref, data);
+}
+
+const Container *ResourceManager::container(const QPointer<Entry> ref)
 {
     Container *c = nullptr;
     if (m_containers.count() > ref->container) {
@@ -206,46 +243,97 @@ void ResourceManager::extract(const QPointer<Entry> ref)
     } else {
         qWarning() << "Invalid container index:" << ref->container;
         emit errorOccured(u"Invalid container, try reloading indexes!"_qs);
-        return;
+        return c;
     }
+    return c;
+}
+
+const Entry *ResourceManager::entry(const Container *c, const QPointer<Entry> ref)
+{
     Entry *e = nullptr;
     if (c->entries.count() >= ref->entry) {
         e = c->entries[ref->entry];
     } else {
         qWarning() << "Invalid entry index:" << ref->entry;
         emit errorOccured(u"Invalid entry, try reloading indexes!"_qs);
-        return;
+        return e;
     }
-    qInfo() << "Starting extraction of" << ref;
+    return e;
+}
+
+bool ResourceManager::extract(const QPointer<Entry> ref, QByteArray &output)
+{
+    const Container *c = container(ref);
+    if (!c)
+        return false;
+    const Entry *e = entry(c, ref);
+    if (!e)
+        return false;
+    qInfo() << "Starting extraction of" << e;
     QFile f(c->resourcePath(e->flags2));
     if (!f.open(QFile::ReadOnly)) {
-        qWarning() << "Failed to open:" << f.fileName();
         emit errorOccured(u"Failed to open resource file: %1"_qs.arg(f.fileName()));
-        return;
+        return false;
     }
     if (!f.seek(e->resourcePos)) {
         f.close();
-        qWarning() << "Failed to seek to resource position...";
-        emit errorOccured(u"Failed to read resource file, check for corrupt files!"_qs);
-        return;
+        emit errorOccured(u"Failed to read resource file, resource beyond end of file!"_qs);
+        return false;
     }
     QByteArray rawData = f.read(e->sizePacked);
     f.close();
     if (rawData.size() != e->sizePacked) {
-        qWarning() << "Failed to read all data from resource file...";
-        emit errorOccured(u"Failed to read resource file, check for corrupt files!"_qs);
-        return;
+        emit errorOccured(u"Failed to read resource file, resource file too small!"_qs);
+        return false;
     }
-    QByteArray result;
     if (e->size != e->sizePacked) {
-        if (!zutils::inflt(rawData, result)) {
-            qWarning() << "Failed to decompress data...";
+        if (!zutils::inflt(rawData, output)) {
             emit errorOccured(u"Failed to decompress asset, check for corrupt files!"_qs);
-            return;
+            return false;
         }
     } else {
-        result = rawData;
+        output = rawData;
     }
-    qInfo() << "Finished extraction," << result.size() << "bytes!";
-    emit extractResult(ref, result);
+    qInfo() << "Finished extraction," << output.size() << "bytes!";
+    return true;
+}
+
+bool ResourceManager::insert(const QPointer<Entry> ref, QByteArray &rawData)
+{
+    const Container *c = container(ref);
+    if (!c)
+        return false;
+    const Entry *e = entry(c, ref);
+    if (!e)
+        return false;
+    qInfo() << "Starting insertion of" << e;
+    QByteArray data;
+    if (e->size != e->sizePacked) {
+        if (!zutils::deflt(rawData, data)) {
+            emit errorOccured(u"Failed to compress asset!"_qs);
+            return false;
+        }
+    } else {
+        data = rawData;
+    }
+    if (data.size() > e->sizePacked) {
+        emit errorOccured(u"Asset is too large, %1 > %2"_qs.arg(data.size()).arg(e->sizePacked));
+        return false;
+    } else if (data.size() < e->sizePacked) {
+        data.append('\0' * (e->sizePacked - data.size()));
+    }
+    QFile f(c->resourcePath(e->flags2));
+    if (!f.open(QFile::ReadWrite)) {
+        emit errorOccured(u"Failed to open resource file: %1"_qs.arg(f.fileName()));
+        return false;
+    }
+    if (!f.seek(e->resourcePos)) {
+        f.close();
+        emit errorOccured(u"Failed to write resource file, check for corrupt files!"_qs);
+        return false;
+    }
+    f.write(data);
+    f.close();
+    qInfo() << "Finished insertion," << data.size() << "bytes!";
+    return true;
 }
