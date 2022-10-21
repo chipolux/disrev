@@ -66,7 +66,10 @@ class ResourceContainer:
             # master.index is a mystery
             assert magic == b"\x05SER", f"Invalid index: {self.idx_path}"
             for i in range(self.entry_count):
-                self.entries.append(ResourceEntry(self, f))
+                entry = ResourceEntry(self, f)
+                # ignore entries with no size (deleted?)
+                if entry.size and entry.rsc_size:
+                    self.entries.append(entry)
 
     @property
     def idx_path(self):
