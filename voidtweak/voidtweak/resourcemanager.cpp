@@ -378,17 +378,18 @@ bool ResourceManager::processEntities(const QByteArray &data)
             }
             continue;
         }
+        // detect end of token and insert it into token cache
+        if (!token.isEmpty() && QByteArrayLiteral(" \t\r\n-{};").contains(c)) {
+            tokens.append(token);
+            token.clear();
+        }
         switch (c) {
-        // handle token separators
+        // skip these control characters
         case ' ':
         case '\t':
         case '\r':
         case '\n':
         case '=': {
-            if (!token.isEmpty()) {
-                tokens.append(token);
-                token.clear();
-            }
             break;
         }
         // handle value end marker
@@ -403,14 +404,14 @@ bool ResourceManager::processEntities(const QByteArray &data)
             }
             // NOTE: some values have a key that is made up of 2+ tokens
             // we just combine them into 1 key string for now
+            QByteArray value = tokens.takeLast();
             const int keyStart = stack.count() - 1;
             const int keyEnd = tokens.count() - 1;
             QByteArray key;
             for (int ki = keyEnd; ki >= keyStart; ki--) {
                 key.prepend((ki == keyStart ? "" : " ") + tokens.takeAt(ki));
             }
-            stack.last().insert(QString(key), QString(token));
-            token.clear();
+            stack.last().insert(QString(key), QString(value));
             break;
         }
         // handle start of nested scope
