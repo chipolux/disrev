@@ -18,8 +18,10 @@ ApplicationWindow {
     ListView {
         id: resultsList
         model: core.results
+        enabled: !core.busy
         spacing: 2
         boundsBehavior: ListView.StopAtBounds
+        interactive: !contextMenu.visible
         anchors.top: searchStatusLabel.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -78,7 +80,7 @@ ApplicationWindow {
         id: searchInput
         placeholderText: "Search in source and destination..."
         width: parent.width
-        enabled: !core.loading
+        enabled: !core.busy
         anchors.left: parent.left
         anchors.right: loadIndexesButton.left
         anchors.top: parent.top
@@ -91,7 +93,7 @@ ApplicationWindow {
         id: loadIndexesButton
         height: searchInput.height
         text: "Load Indexes"
-        enabled: !core.loading
+        enabled: !core.busy
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: 5
@@ -148,6 +150,13 @@ ApplicationWindow {
                 fileDialog.fileMode = FileDialog.OpenFile
                 fileDialog.open()
             }
+        }
+        MenuItem {
+            text: "Load Entities"
+            visible: contextMenu.entry
+                     && contextMenu.entry.dstSuffix === "entities"
+            height: visible ? undefined : 0
+            onTriggered: core.loadEntities(contextMenu.entry)
         }
     }
 

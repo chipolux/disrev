@@ -3,7 +3,7 @@
 Core::Core(QObject *parent)
     : QObject{parent}
     , m_error()
-    , m_loading(false)
+    , m_busy(false)
     , m_containerCount(0)
     , m_entryCount(0)
     , m_rm(new ResourceManager)
@@ -17,15 +17,14 @@ Core::Core(QObject *parent)
     connect(this, &Core::extractEntry, m_rm, &ResourceManager::extractEntry);
     connect(this, &Core::exportEntry, m_rm, &ResourceManager::exportEntry);
     connect(this, &Core::importEntry, m_rm, &ResourceManager::importEntry);
-    connect(m_rm, &ResourceManager::errorOccured, this, &Core::setError);
-    connect(m_rm, &ResourceManager::loadingFinished, this, [&]() { setLoading(false); });
-    connect(m_rm, &ResourceManager::containersLoaded, this, &Core::setContainerCount);
-    connect(m_rm, &ResourceManager::entriesLoaded, this, &Core::setEntryCount);
+    connect(this, &Core::loadEntities, m_rm, &ResourceManager::loadEntities);
+    connect(m_rm, &ResourceManager::statusChanged, this, &Core::rmStatusChanged);
+    connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);
     connect(m_rm, &ResourceManager::extractResult, this, &Core::extractResult);
     m_rmThread->start();
 
-    m_searchResultDebounce->setInterval(500);
+    m_searchResultDebounce->setInterval(100);
     m_searchResultDebounce->setSingleShot(true);
     connect(m_searchResultDebounce, &QTimer::timeout, this, &Core::resultsChanged);
 
@@ -36,4 +35,16 @@ Core::~Core()
 {
     m_rmThread->quit();
     m_rmThread->wait();
+}
+
+void Core::rmStatusChanged(bool busy, QString error)
+{
+    setBusy(busy);
+    setError(error);
+}
+
+void Core::indexesLoaded(int containerCount, int entryCount)
+{
+    setContainerCount(containerCount);
+    setEntryCount(entryCount);
 }

@@ -18,10 +18,8 @@ class ResourceManager : public QObject
     explicit ResourceManager(QObject *parent = nullptr);
 
   signals:
-    void errorOccured(QString error);
-    void loadingFinished();
-    void containersLoaded(int count);
-    void entriesLoaded(int count);
+    void statusChanged(bool busy, QString error);
+    void indexesLoaded(int containerCount, int entryCount);
     void searchResult(QPointer<Entry>);
     void extractResult(const QPointer<Entry> ref, QByteArray data);
 
@@ -31,6 +29,7 @@ class ResourceManager : public QObject
     void extractEntry(const QPointer<Entry> ref);
     void exportEntry(const QPointer<Entry> ref, QUrl path);
     void importEntry(const QPointer<Entry> ref, QUrl path);
+    void loadEntities(const QPointer<Entry> ref);
 
   private:
     QList<Container *> m_containers;
@@ -42,6 +41,7 @@ class ResourceManager : public QObject
     const Entry *entry(const Container *c, const QPointer<Entry> ref);
     bool extract(const QPointer<Entry> ref, QByteArray &data);
     bool insert(const QPointer<Entry> ref, QByteArray &data);
+    bool processEntities(const QByteArray &data);
 };
 
 #endif // RESOURCEMANAGER_H

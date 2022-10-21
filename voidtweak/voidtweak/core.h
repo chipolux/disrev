@@ -26,32 +26,31 @@ class Core : public QObject
   signals:
     void startLoadingIndexes();
     void startSearch(const QString &query);
-    void resultsChanged();
     void extractEntry(Entry *entry);
     void exportEntry(Entry *entry, QUrl path);
     void importEntry(Entry *entry, QUrl path);
+    void loadEntities(Entry *entry);
+
+    void resultsChanged();
 
   public slots:
     void loadIndexes()
     {
-        if (!m_loading) {
+        if (!m_busy) {
             clear();
-            setLoading(true);
             emit startLoadingIndexes();
         }
     }
     void search(const QString &query)
     {
-        if (!m_loading) {
+        if (!m_busy) {
             clear();
-            setLoading(true);
             emit startSearch(query);
         }
     }
     void clear()
     {
-        if (!m_loading) {
-            setError({});
+        if (!m_busy) {
             m_resultCount = 0;
             qDeleteAllLater(m_results);
             emit resultsChanged();
@@ -59,6 +58,8 @@ class Core : public QObject
     }
 
   private slots:
+    void rmStatusChanged(bool busy, QString error);
+    void indexesLoaded(int containerCount, int entryCount);
     void searchResult(QPointer<Entry> entry)
     {
         m_resultCount++;
@@ -72,7 +73,7 @@ class Core : public QObject
 
   private:
     RW_PROP(QString, error, setError);
-    RW_PROP(bool, loading, setLoading);
+    RW_PROP(bool, busy, setBusy);
 
     RW_PROP(int, containerCount, setContainerCount);
     RW_PROP(int, entryCount, setEntryCount);
