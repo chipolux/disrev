@@ -1,11 +1,16 @@
 #include "core.h"
 
+#include <algorithm>
+
 Core::Core(QObject *parent)
     : QObject{parent}
     , m_error()
     , m_busy(false)
     , m_containerCount(0)
     , m_entryCount(0)
+    , m_sortOrder(SortNone)
+    , m_resultCount(0)
+    , m_results()
     , m_rm(new ResourceManager)
     , m_rmThread(new QThread(this))
     , m_searchResultDebounce(new QTimer(this))
@@ -37,6 +42,103 @@ Core::~Core()
     m_rmThread->wait();
 }
 
+const QString Core::sortOrderName() const
+{
+    QString name;
+    switch (m_sortOrder) {
+    case SortNone:
+    case SortMax:
+        name = u"None"_qs;
+        break;
+    case SortSizeAscending:
+        name = u"Size ▲"_qs;
+        break;
+    case SortSizeDescending:
+        name = u"Size ▼"_qs;
+        break;
+    case SortTypeAscending:
+        name = u"Type ▲"_qs;
+        break;
+    case SortTypeDescending:
+        name = u"Type ▼"_qs;
+        break;
+    case SortSrcAscending:
+        name = u"Src ▲"_qs;
+        break;
+    case SortSrcDescending:
+        name = u"Src ▼"_qs;
+        break;
+    case SortDstAscending:
+        name = u"Dst ▲"_qs;
+        break;
+    case SortDstDescending:
+        name = u"Dst ▼"_qs;
+        break;
+    }
+    return name;
+}
+
+void Core::sortResults(const Core::SortOrder &order)
+{
+    if (order != m_sortOrder) {
+        m_sortOrder = order == SortMax ? SortNone : order;
+        switch (m_sortOrder) {
+        case SortNone:
+        case SortMax:
+            break;
+        case SortSizeAscending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->size < b->size; });
+            emit resultsChanged();
+            break;
+        }
+        case SortSizeDescending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->size > b->size; });
+            emit resultsChanged();
+            break;
+        }
+        case SortTypeAscending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->type < b->type; });
+            emit resultsChanged();
+            break;
+        }
+        case SortTypeDescending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->type > b->type; });
+            emit resultsChanged();
+            break;
+        }
+        case SortSrcAscending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->src < b->src; });
+            emit resultsChanged();
+            break;
+        }
+        case SortSrcDescending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->src > b->src; });
+            emit resultsChanged();
+            break;
+        }
+        case SortDstAscending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->dst < b->dst; });
+            emit resultsChanged();
+            break;
+        }
+        case SortDstDescending: {
+            std::sort(m_results.begin(), m_results.end(),
+                      [](const Entry *a, const Entry *b) { return a->dst > b->dst; });
+            emit resultsChanged();
+            break;
+        }
+        }
+        emit sortOrderChanged();
+    }
+}
+
 void Core::loadIndexes()
 {
     if (!m_busy) {
@@ -56,9 +158,11 @@ void Core::search(const QString &query)
 void Core::clear()
 {
     if (!m_busy) {
+        m_sortOrder = SortNone;
         m_resultCount = 0;
         qDeleteAllLater(m_results);
         emit resultsChanged();
+        emit sortOrderChanged();
     }
 }
 

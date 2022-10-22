@@ -43,7 +43,7 @@ ApplicationWindow {
         // gradient under control column
         gradient: Gradient {
             GradientStop {
-                position: 0.8
+                position: 0.85
                 color: rootWindow.color
             }
             GradientStop {
@@ -111,11 +111,34 @@ ApplicationWindow {
     }
 
     Label {
-        id: indexStatusLabel
-        text: `Loaded ${core.entryCount} entries from ${core.containerCount} indexes.`
+        id: sortLabel
+        text: `Sort: ${core.sortOrderName}`
         color: "#DDD"
         anchors.right: parent.right
-        anchors.top: loadIndexesButton.bottom
+        anchors.top: searchInput.bottom
+        anchors.margins: 5
+
+        MouseArea {
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            anchors.fill: parent
+
+            onClicked: function (event) {
+                if (event.button === Qt.RightButton) {
+                    core.sortResults(Core.SortNone)
+                } else {
+                    core.sortResults(core.sortOrder + 1)
+                }
+            }
+            onPressAndHold: core.sortResults(Core.SortNone)
+        }
+    }
+
+    Label {
+        id: indexStatusLabel
+        text: `Indexes: ${core.containerCount}, Entries: ${core.entryCount}`
+        color: "#DDD"
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
         anchors.margins: 5
     }
 
@@ -124,7 +147,7 @@ ApplicationWindow {
         text: core.error
         visible: !!core.error
         color: "orange"
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 5
     }
