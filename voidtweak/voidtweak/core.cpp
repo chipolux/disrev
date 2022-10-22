@@ -37,6 +37,31 @@ Core::~Core()
     m_rmThread->wait();
 }
 
+void Core::loadIndexes()
+{
+    if (!m_busy) {
+        clear();
+        emit startLoadingIndexes();
+    }
+}
+
+void Core::search(const QString &query)
+{
+    if (!m_busy) {
+        clear();
+        emit startSearch(query);
+    }
+}
+
+void Core::clear()
+{
+    if (!m_busy) {
+        m_resultCount = 0;
+        qDeleteAllLater(m_results);
+        emit resultsChanged();
+    }
+}
+
 void Core::rmStatusChanged(bool busy, QString error)
 {
     setBusy(busy);
@@ -48,3 +73,15 @@ void Core::indexesLoaded(int containerCount, int entryCount)
     setContainerCount(containerCount);
     setEntryCount(entryCount);
 }
+
+void Core::searchResult(QPointer<Entry> entry)
+{
+    m_resultCount++;
+    // we let the ResourceManager keep ownership of the Container and Entry
+    // dataset, but since it lives in another thread we make a copy of the
+    // Entry's we wish to show in the UI
+    m_results.append(new Entry(entry, this));
+    m_searchResultDebounce->start();
+}
+
+void Core::extractResult(const QPointer<Entry>, QByteArray) {}

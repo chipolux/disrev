@@ -30,46 +30,18 @@ class Core : public QObject
     void exportEntry(Entry *entry, QUrl path);
     void importEntry(Entry *entry, QUrl path);
     void loadEntities(Entry *entry);
-
     void resultsChanged();
 
   public slots:
-    void loadIndexes()
-    {
-        if (!m_busy) {
-            clear();
-            emit startLoadingIndexes();
-        }
-    }
-    void search(const QString &query)
-    {
-        if (!m_busy) {
-            clear();
-            emit startSearch(query);
-        }
-    }
-    void clear()
-    {
-        if (!m_busy) {
-            m_resultCount = 0;
-            qDeleteAllLater(m_results);
-            emit resultsChanged();
-        }
-    }
+    void loadIndexes();
+    void search(const QString &query);
+    void clear();
 
   private slots:
     void rmStatusChanged(bool busy, QString error);
     void indexesLoaded(int containerCount, int entryCount);
-    void searchResult(QPointer<Entry> entry)
-    {
-        m_resultCount++;
-        // we let the ResourceManager keep ownership of the Container and Entry
-        // dataset, but since it lives in another thread we make a copy of the
-        // Entry's we wish to show in the UI
-        m_results.append(new Entry(entry, this));
-        m_searchResultDebounce->start();
-    }
-    void extractResult(const QPointer<Entry>, QByteArray) {}
+    void searchResult(QPointer<Entry> entry);
+    void extractResult(const QPointer<Entry>, QByteArray);
 
   private:
     RW_PROP(QString, error, setError);
