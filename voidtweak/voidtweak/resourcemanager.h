@@ -5,6 +5,8 @@
 #include <QPointer>
 #include <QtQml>
 
+#include "decl.h"
+
 class Entry;
 class Container;
 
@@ -20,8 +22,9 @@ class ResourceManager : public QObject
   signals:
     void statusChanged(bool busy, QString error);
     void indexesLoaded(int containerCount, int entryCount);
-    void searchResult(QPointer<Entry>);
+    void searchResult(const QPointer<Entry> entry);
     void extractResult(const QPointer<Entry> ref, QByteArray data);
+    void entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities);
 
   public slots:
     void loadIndexes();
@@ -41,7 +44,6 @@ class ResourceManager : public QObject
     const Entry *entry(const Container *c, const QPointer<Entry> ref);
     bool extract(const QPointer<Entry> ref, QByteArray &data);
     bool insert(const QPointer<Entry> ref, QByteArray &data);
-    bool processEntities(const QByteArray &data);
 };
 
 #endif // RESOURCEMANAGER_H

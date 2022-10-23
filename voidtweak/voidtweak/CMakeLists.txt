@@ -34,6 +34,8 @@ set(PROJECT_SOURCES
     resourcemanager.h
     zutils.cpp
     zutils.h
+    decl.h
+    decl.cpp
 )
 set(PROJECT_RESOURCES
     resources/Fira_Code/FiraCode-Bold.ttf

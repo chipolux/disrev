@@ -5,6 +5,7 @@
 #include <QDir>
 
 #include "container.h"
+#include "decl.h"
 #include "entry.h"
 #include "zutils.h"
 
@@ -58,7 +59,7 @@ bool ResourceManager::loadMasterIndex()
     in.skipRawData(2); // unknown, always 0x0002?
     quint16 indexCount;
     in >> indexCount;
-    for (quint32 i = 0; i < indexCount; i++) {
+    for (quint32 i = 0; i < indexCount; ++i) {
         in.setByteOrder(QDataStream::LittleEndian);
         Container *c = new Container(this);
         c->dir = dir.absolutePath();
@@ -76,7 +77,7 @@ bool ResourceManager::loadMasterIndex()
 
     quint32 resourceCount;
     in >> resourceCount;
-    for (quint32 i = 0; i < resourceCount; i++) {
+    for (quint32 i = 0; i < resourceCount; ++i) {
         in.setByteOrder(QDataStream::LittleEndian);
         quint32 strLen;
         char *str = nullptr;
@@ -90,11 +91,11 @@ bool ResourceManager::loadMasterIndex()
 
     quint32 sharedRscCount;
     in >> sharedRscCount;
-    for (quint32 i = 0; i < sharedRscCount; i++) {
+    for (quint32 i = 0; i < sharedRscCount; ++i) {
         quint32 sharedIndexCount;
         in >> sharedIndexCount;
         QList<quint16> indexes;
-        for (quint32 k = 0; k < sharedIndexCount; k++) {
+        for (quint32 k = 0; k < sharedIndexCount; ++k) {
             quint16 idx;
             in >> idx;
             indexes << idx;
@@ -117,7 +118,7 @@ bool ResourceManager::loadMasterIndex()
 
 bool ResourceManager::loadChildIndexes()
 {
-    for (int ci = 0; ci < m_containers.count(); ci++) {
+    for (int ci = 0; ci < m_containers.count(); ++ci) {
         Container *c = m_containers[ci];
         QFile f(c->indexPath());
         if (!f.open(QFile::ReadOnly)) {
@@ -139,7 +140,7 @@ bool ResourceManager::loadChildIndexes()
         quint32 entryCount;
         int entriesAdded = 0;
         in >> entryCount;
-        for (quint32 ei = 0; ei < entryCount; ei++) {
+        for (quint32 ei = 0; ei < entryCount; ++ei) {
             Entry *e = new Entry(ci, c);
             e->indexPos = f.pos();
             in >> e->id;
@@ -238,9 +239,14 @@ void ResourceManager::loadEntities(const QPointer<Entry> ref)
     QByteArray data;
     if (!extract(ref, data))
         return;
-    if (!processEntities(data))
-        return;
-    emit statusChanged(false, {});
+    QList<decl::Scope> entities;
+    QString error = decl::parse(data, entities);
+    if (error.isEmpty()) {
+        emit entitiesLoaded(ref, entities);
+        emit statusChanged(false, {});
+    } else {
+        emit statusChanged(false, error);
+    }
 }
 
 const Container *ResourceManager::container(const QPointer<Entry> ref)
@@ -342,118 +348,5 @@ bool ResourceManager::insert(const QPointer<Entry> ref, QByteArray &rawData)
     f.write(data);
     f.close();
     qInfo() << "Finished insertion," << data.size() << "bytes!";
-    return true;
-}
-
-bool ResourceManager::processEntities(const QByteArray &data)
-{
-    qInfo() << "Started loading entities...";
-    if (data.first(9) != QByteArrayLiteral("Version 6")) {
-        emit statusChanged(false, u"Unknown header!"_qs);
-        return false;
-    }
-    QByteArray token;
-    QList<QByteArray> tokens;
-    QList<QVariantMap> stack;
-    QVariantMap entities;
-    int entityCount = 0;
-    bool inEscape = false;
-    bool inString = false;
-    for (int i = 9; i < data.size(); i++) {
-        const auto c = data[i];
-        // shortcut escape sequences
-        if (inEscape) {
-            token.append(c);
-            inEscape = false;
-            continue;
-        } else if (c == '\\') {
-            inEscape = true;
-            continue;
-        }
-        // shortcut characters within a string and string toggles
-        if (inString || c == '"' || c == '\'') {
-            token.append(c);
-            if (c == '"' || c == '\'') {
-                inString = !inString;
-            }
-            continue;
-        }
-        // detect end of token and insert it into token cache
-        if (!token.isEmpty() && QByteArrayLiteral(" \t\r\n-{};").contains(c)) {
-            tokens.append(token);
-            token.clear();
-        }
-        switch (c) {
-        // skip these control characters
-        case ' ':
-        case '\t':
-        case '\r':
-        case '\n':
-        case '=': {
-            break;
-        }
-        // handle value end marker
-        case ';': {
-            if (stack.isEmpty()) {
-                emit statusChanged(false, u"Missing stack frame for key-value pair @ %1"_qs.arg(i));
-                return false;
-            }
-            if (tokens.isEmpty()) {
-                emit statusChanged(false, u"Missing tokens for key-value pair @ %1"_qs.arg(i));
-                return false;
-            }
-            // NOTE: some values have a key that is made up of 2+ tokens
-            // we just combine them into 1 key string for now
-            QByteArray value = tokens.takeLast();
-            const int keyStart = stack.count() - 1;
-            const int keyEnd = tokens.count() - 1;
-            QByteArray key;
-            for (int ki = keyEnd; ki >= keyStart; ki--) {
-                key.prepend((ki == keyStart ? "" : " ") + tokens.takeAt(ki));
-            }
-            stack.last().insert(QString(key), QString(value));
-            break;
-        }
-        // handle start of nested scope
-        case '{': {
-            if (stack.isEmpty() && tokens.count() == 3) {
-                stack.append({
-                    {u"entityId"_qs, QString(tokens.takeLast())},
-                    {u"entityType"_qs, QString(tokens.takeLast())},
-                    {u"definitionType"_qs, QString(tokens.takeLast())},
-                });
-            } else if (!stack.isEmpty()) {
-                stack.append(QVariantMap());
-            }
-            break;
-        }
-        // handle exiting nested scope
-        case '}': {
-            if (stack.count() == 1 && tokens.isEmpty()) {
-                QVariantMap frame = stack.takeLast();
-                entities.insert(frame.value(u"entityId"_qs).toString(), frame);
-                entityCount++;
-            } else if (stack.count() > 1 && !tokens.isEmpty()) {
-                QVariantMap frame = stack.takeLast();
-                stack.last().insert(QString(tokens.takeLast()), frame);
-            }
-            break;
-        }
-        default: {
-            token.append(c);
-            break;
-        }
-        }
-    }
-    if (!stack.isEmpty() || !tokens.isEmpty()) {
-        emit statusChanged(false, u"Bad entities, leftover data!"_qs);
-        return false;
-    }
-    if (entityCount != entities.count()) {
-        emit statusChanged(false, u"Bad entities, duplicate ids!"_qs);
-        return false;
-    }
-
-    qInfo() << "Loaded entities:" << entities.count();
     return true;
 }

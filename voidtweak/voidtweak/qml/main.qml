@@ -12,7 +12,8 @@ ApplicationWindow {
     color: "#333"
 
     Loader {
-        source: "EntrySearchPage.qml"
+        source: !!core.entitiesModel.rowCount(
+                    ) ? "EntitiesListPage.qml" : "EntrySearchPage.qml"
         anchors.fill: parent
     }
 }

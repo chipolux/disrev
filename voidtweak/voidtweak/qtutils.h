@@ -109,8 +109,8 @@ template <typename Container> inline void qDeleteAllLater(Container &c)
     Q_PROPERTY(T R READ R NOTIFY R##Changed)                                                       \
     T m_##R;
 
-// Constant Public Memeber Prop
-#define MBC_PROP(T, R)                                                                             \
+// CONSTANT MEMBER Prop
+#define CM_PROP(T, R)                                                                              \
   public:                                                                                          \
     Q_PROPERTY(T R MEMBER R CONSTANT)                                                              \
     T R;

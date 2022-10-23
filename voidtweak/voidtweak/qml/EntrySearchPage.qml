@@ -70,7 +70,6 @@ Item {
     TextField {
         id: searchInput
         placeholderText: "Search in source and destination..."
-        width: parent.width
         enabled: !core.busy
         anchors.left: parent.left
         anchors.right: loadIndexesButton.left

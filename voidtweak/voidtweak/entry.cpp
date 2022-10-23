@@ -6,7 +6,7 @@ Entry::Entry(const int &container, QObject *parent)
 {
 }
 
-Entry::Entry(QPointer<Entry> other, QObject *parent)
+Entry::Entry(const QPointer<Entry> other, QObject *parent)
     : QObject(parent)
     , container(other->container)
     , entry(other->entry)

@@ -1,5 +1,7 @@
 #include "core.h"
 
+#include <QStandardItem>
+#include <QStandardItemModel>
 #include <algorithm>
 
 Core::Core(QObject *parent)
@@ -14,6 +16,8 @@ Core::Core(QObject *parent)
     , m_rm(new ResourceManager)
     , m_rmThread(new QThread(this))
     , m_searchResultDebounce(new QTimer(this))
+    , m_entitiesModel(new QStandardItemModel(this))
+    , m_entitiesProxy(new QSortFilterProxyModel(this))
 {
     m_rm->moveToThread(m_rmThread);
     connect(m_rmThread, &QThread::finished, m_rm, &QObject::deleteLater);
@@ -27,11 +31,16 @@ Core::Core(QObject *parent)
     connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);
     connect(m_rm, &ResourceManager::extractResult, this, &Core::extractResult);
+    connect(m_rm, &ResourceManager::entitiesLoaded, this, &Core::entitiesLoaded);
     m_rmThread->start();
 
     m_searchResultDebounce->setInterval(100);
     m_searchResultDebounce->setSingleShot(true);
     connect(m_searchResultDebounce, &QTimer::timeout, this, &Core::resultsChanged);
+
+    m_entitiesProxy->setSourceModel(m_entitiesModel);
+    m_entitiesProxy->setAutoAcceptChildRows(true);
+    m_entitiesProxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
 
     QTimer::singleShot(100, this, &Core::loadIndexes);
 }
@@ -163,7 +172,14 @@ void Core::clear()
         qDeleteAllLater(m_results);
         emit resultsChanged();
         emit sortOrderChanged();
+        clearEntities();
     }
+}
+
+void Core::clearEntities()
+{
+    m_entitiesModel->clear();
+    emit entitiesModelChanged();
 }
 
 void Core::rmStatusChanged(bool busy, QString error)
@@ -178,9 +194,9 @@ void Core::indexesLoaded(int containerCount, int entryCount)
     setEntryCount(entryCount);
 }
 
-void Core::searchResult(QPointer<Entry> entry)
+void Core::searchResult(const QPointer<Entry> entry)
 {
-    m_resultCount++;
+    ++m_resultCount;
     // we let the ResourceManager keep ownership of the Container and Entry
     // dataset, but since it lives in another thread we make a copy of the
     // Entry's we wish to show in the UI
@@ -189,3 +205,34 @@ void Core::searchResult(QPointer<Entry> entry)
 }
 
 void Core::extractResult(const QPointer<Entry>, QByteArray) {}
+
+void Core::entitiesLoaded(const QPointer<Entry>, QList<decl::Scope> entities)
+{
+    qInfo() << "Building model for entities...";
+    m_entitiesModel->clear();
+    QStandardItem *root = m_entitiesModel->invisibleRootItem();
+    for (const auto &obj : entities) {
+        const decl::Entity e(obj);
+        if (e.isValid()) {
+            QStandardItem *item = new QStandardItem(u"%1 %2"_qs.arg(e.entityType, e.entityId));
+            root->appendRow(item);
+            mapEntitiesToModel(obj, item);
+        }
+    }
+    qInfo() << "Model built!";
+    emit entitiesModelChanged();
+}
+
+// NOTE: recursive, entity scopes never seem to be more than ~6 deep
+void mapEntitiesToModel(const decl::Scope &obj, QStandardItem *parent)
+{
+    for (const auto &entry : obj) {
+        QStandardItem *item = new QStandardItem(entry.first);
+        parent->appendRow(item);
+        if (entry.second.canConvert<decl::Scope>()) {
+            mapEntitiesToModel(entry.second.value<decl::Scope>(), item);
+        } else {
+            item->setData(entry.second, Qt::UserRole);
+        }
+    }
+}

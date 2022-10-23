@@ -10,10 +10,10 @@ class Container : public QObject
 {
     Q_OBJECT
 
-    MBC_PROP(QString, dir)
-    MBC_PROP(QString, path)
-    MBC_PROP(QList<QString>, resources)
-    MBC_PROP(QList<Entry *>, entries)
+    CM_PROP(QString, dir)
+    CM_PROP(QString, path)
+    CM_PROP(QList<QString>, resources)
+    CM_PROP(QList<Entry *>, entries)
     Q_PROPERTY(QString indexPath READ indexPath CONSTANT)
 
   public:

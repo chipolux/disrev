@@ -2,11 +2,15 @@
 #define CORE_H
 
 #include <QObject>
+#include <QSortFilterProxyModel>
+#include <QStandardItemModel>
 #include <QtQml>
 
 #include "entry.h"
 #include "qtutils.h"
 #include "resourcemanager.h"
+
+class QStandardItem;
 
 class Core : public QObject
 {
@@ -18,6 +22,10 @@ class Core : public QObject
     Q_PROPERTY(QString sortOrderName READ sortOrderName NOTIFY sortOrderChanged)
     Q_PROPERTY(int resultCount READ resultCount NOTIFY resultsChanged)
     Q_PROPERTY(QList<Entry *> results READ results NOTIFY resultsChanged)
+    Q_PROPERTY(
+        const QSortFilterProxyModel *entitiesProxy READ entitiesProxy NOTIFY entitiesModelChanged)
+    Q_PROPERTY(
+        const QStandardItemModel *entitiesModel READ entitiesModel NOTIFY entitiesModelChanged)
 
   public:
     enum SortOrder {
@@ -40,6 +48,8 @@ class Core : public QObject
     const QString sortOrderName() const;
     const int &resultCount() const { return m_resultCount; }
     const QList<Entry *> &results() const { return m_results; }
+    const QSortFilterProxyModel *entitiesProxy() const { return m_entitiesProxy; }
+    const QStandardItemModel *entitiesModel() const { return m_entitiesModel; }
 
   signals:
     void startLoadingIndexes();
@@ -50,18 +60,21 @@ class Core : public QObject
     void loadEntities(Entry *entry);
     void sortOrderChanged();
     void resultsChanged();
+    void entitiesModelChanged();
 
   public slots:
     void sortResults(const Core::SortOrder &order);
     void loadIndexes();
     void search(const QString &query);
     void clear();
+    void clearEntities();
 
   private slots:
     void rmStatusChanged(bool busy, QString error);
     void indexesLoaded(int containerCount, int entryCount);
-    void searchResult(QPointer<Entry> entry);
-    void extractResult(const QPointer<Entry>, QByteArray);
+    void searchResult(const QPointer<Entry> entry);
+    void extractResult(const QPointer<Entry> ref, QByteArray data);
+    void entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities);
 
   private:
     RW_PROP(QString, error, setError)
@@ -76,6 +89,11 @@ class Core : public QObject
     QPointer<ResourceManager> m_rm;
     QThread *m_rmThread;
     QTimer *m_searchResultDebounce;
+
+    QStandardItemModel *m_entitiesModel;
+    QSortFilterProxyModel *m_entitiesProxy;
 };
+
+void mapEntitiesToModel(const decl::Scope &obj, QStandardItem *parent);
 
 #endif // CORE_H
