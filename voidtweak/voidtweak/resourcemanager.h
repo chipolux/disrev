@@ -30,6 +30,7 @@ class ResourceManager : public QObject
     void loadIndexes();
     void search(const QString &query);
     void extractEntry(const QPointer<Entry> ref);
+    void insertEntry(const QPointer<Entry> ref, QByteArray data);
     void exportEntry(const QPointer<Entry> ref, QUrl path);
     void importEntry(const QPointer<Entry> ref, QUrl path);
     void loadEntities(const QPointer<Entry> ref);

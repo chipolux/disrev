@@ -2,15 +2,12 @@
 #define CORE_H
 
 #include <QObject>
-#include <QSortFilterProxyModel>
-#include <QStandardItemModel>
 #include <QtQml>
 
+#include "decl.h"
 #include "entry.h"
 #include "qtutils.h"
 #include "resourcemanager.h"
-
-class QStandardItem;
 
 class Core : public QObject
 {
@@ -22,10 +19,7 @@ class Core : public QObject
     Q_PROPERTY(QString sortOrderName READ sortOrderName NOTIFY sortOrderChanged)
     Q_PROPERTY(int resultCount READ resultCount NOTIFY resultsChanged)
     Q_PROPERTY(QList<Entry *> results READ results NOTIFY resultsChanged)
-    Q_PROPERTY(
-        const QSortFilterProxyModel *entitiesProxy READ entitiesProxy NOTIFY entitiesModelChanged)
-    Q_PROPERTY(
-        const QStandardItemModel *entitiesModel READ entitiesModel NOTIFY entitiesModelChanged)
+    Q_PROPERTY(QList<decl::Entity *> entities READ entities NOTIFY entitiesChanged)
 
   public:
     enum SortOrder {
@@ -48,19 +42,19 @@ class Core : public QObject
     const QString sortOrderName() const;
     const int &resultCount() const { return m_resultCount; }
     const QList<Entry *> &results() const { return m_results; }
-    const QSortFilterProxyModel *entitiesProxy() const { return m_entitiesProxy; }
-    const QStandardItemModel *entitiesModel() const { return m_entitiesModel; }
+    const QList<decl::Entity *> &entities() const { return m_entities; }
 
   signals:
     void startLoadingIndexes();
     void startSearch(const QString &query);
     void extractEntry(Entry *entry);
+    void insertEntry(Entry *entry, QByteArray data);
     void exportEntry(Entry *entry, QUrl path);
     void importEntry(Entry *entry, QUrl path);
     void loadEntities(Entry *entry);
     void sortOrderChanged();
     void resultsChanged();
-    void entitiesModelChanged();
+    void entitiesChanged();
 
   public slots:
     void sortResults(const Core::SortOrder &order);
@@ -68,6 +62,7 @@ class Core : public QObject
     void search(const QString &query);
     void clear();
     void clearEntities();
+    void saveEntities();
 
   private slots:
     void rmStatusChanged(bool busy, QString error);
@@ -90,10 +85,8 @@ class Core : public QObject
     QThread *m_rmThread;
     QTimer *m_searchResultDebounce;
 
-    QStandardItemModel *m_entitiesModel;
-    QSortFilterProxyModel *m_entitiesProxy;
+    QList<decl::Entity *> m_entities;
+    Entry *m_entry;
 };
-
-void mapEntitiesToModel(const decl::Scope &obj, QStandardItem *parent);
 
 #endif // CORE_H

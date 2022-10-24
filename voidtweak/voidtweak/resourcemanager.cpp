@@ -201,6 +201,13 @@ void ResourceManager::extractEntry(const QPointer<Entry> ref)
     emit statusChanged(false, {});
 }
 
+void ResourceManager::insertEntry(const QPointer<Entry> ref, QByteArray data)
+{
+    emit statusChanged(true, {});
+    insert(ref, data);
+    emit statusChanged(false, {});
+}
+
 void ResourceManager::exportEntry(const QPointer<Entry> ref, QUrl path)
 {
     emit statusChanged(true, {});

@@ -1,47 +1,59 @@
 #ifndef DECL_H
 #define DECL_H
 
-#include <QList>
-#include <QPair>
-#include <QString>
-#include <QVariant>
+#include <QObject>
+#include <QtQml>
+
+#include "qtutils.h"
 
 namespace decl
 {
 
-// the order of values within a scope seems important, so we preserve them
-// as Key-Value pairs (Entry) within a list (Scope), the value in an Entry can
-// be (and often is) a Scope
+// these are used for passing around and serializing entities when a full QObject
+// version is not a good fit (between threads, etc.)
 using Entry = QPair<QString, QVariant>;
 using Scope = QList<Entry>;
 
-struct Entity {
-    QString entityId;
-    QString entityType;
-    QString definitionType;
-    Scope data;
+class EntityEntry : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Backend only.")
 
-    explicit Entity(const Scope &scope)
-        : data(scope)
-    {
-        for (const auto &e : scope) {
-            if (e.first == u"entityId"_qs) {
-                entityId = e.second.toString();
-            } else if (e.first == u"entityType"_qs) {
-                entityType = e.second.toString();
-            } else if (e.first == u"definitionType"_qs) {
-                definitionType = e.second.toString();
-            }
-        }
-    }
-    bool isValid() const
-    {
-        return !entityId.isEmpty() && !entityType.isEmpty() && !definitionType.isEmpty();
-    }
+  public:
+    explicit EntityEntry(const Entry &entry, QObject *parent);
+    void toByteArray(QByteArray &stream, const int &depth = 0) const;
+
+  private:
+    RW_PROP(QString, key, setKey)
+    RW_PROP(QString, value, setValue)
+    RW_PROP(QList<EntityEntry *>, entries, setEntries)
+    RW_PROP(bool, isKiscule, setIsKiscule)
+};
+
+class Entity : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Backend only.")
+
+  public:
+    explicit Entity(const Scope &scope, QObject *parent);
+    bool isValid() const;
+    void toByteArray(QByteArray &stream) const;
+
+  private:
+    RW_PROP(QString, entityId, setEntityId)
+    RW_PROP(QString, entityType, setEntityType)
+    RW_PROP(QString, definitionType, setDefinitionType)
+    RW_PROP(QList<EntityEntry *>, entries, setEntries)
 };
 
 // basically all .decl files are a sequence of scopes, this is catered to .entities
 QString parse(const QByteArray &data, QList<Scope> &entities);
+
+// format a list of entities to be written to a .entities file
+void write(const QList<Entity *> &entities, QByteArray &data);
 
 }; // namespace decl
 

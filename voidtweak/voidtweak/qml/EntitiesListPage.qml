@@ -1,60 +1,63 @@
 import QtQuick
 import QtQuick.Controls
+import voidtweak
 
 Item {
-    Rectangle {
-        id: entitiesTreeBackground
-        color: "#444"
-        radius: 4
+    id: page
+
+    Keys.onUpPressed: entitiesList.flick(0, 800)
+    Keys.onDownPressed: entitiesList.flick(0, -800)
+
+    property Entity entity
+
+    ListView {
+        id: entitiesList
+        model: !filterInput.text ? core.entities : core.entities.filter(
+                                       e => e.entityId.includes(
+                                           filterInput.text))
+        enabled: !core.busy
+        spacing: 5
+        boundsBehavior: ListView.StopAtBounds
         anchors.top: filterInput.bottom
         anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.right: entityEditPage.left
         anchors.bottom: parent.bottom
         anchors.margins: 5
+
+        delegate: EntityListItem {
+            width: ListView.view.width
+            entity: modelData
+            selected: page.entity === modelData
+
+            onEditRequested: page.entity = modelData
+        }
     }
 
-    TreeView {
-        id: entitiesTree
-        model: core.entitiesProxy
-        boundsBehavior: TreeView.StopAtBounds
-        anchors.fill: entitiesTreeBackground
-        anchors.margins: 5
+    EntityEditPage {
+        id: entityEditPage
+        width: parent.width * 0.7
+        entity: page.entity
+        anchors.top: entitiesList.top
+        anchors.bottom: entitiesList.bottom
+        anchors.right: parent.right
+        anchors.rightMargin: 5
+    }
 
-        delegate: Item {
-            id: treeDelegate
-            implicitWidth: treeView.width
-            implicitHeight: label.implicitHeight * 1.6
-
-            readonly property real indent: 15
-            readonly property real padding: 0
-            required property TreeView treeView
-            required property bool isTreeNode
-            required property bool expanded
-            required property int hasChildren
-            required property int depth
-
-            TapHandler {
-                onTapped: treeView.toggleExpanded(row)
+    Rectangle {
+        gradient: Gradient {
+            GradientStop {
+                position: 0.85
+                color: rootWindow.color
             }
-
-            Text {
-                id: indicator
-                x: treeDelegate.padding + (treeDelegate.depth * treeDelegate.indent)
-                visible: treeDelegate.isTreeNode && treeDelegate.hasChildren
-                text: treeDelegate.expanded ? "▼" : "▶"
-                color: "#DDD"
-                anchors.verticalCenter: label.verticalCenter
-            }
-
-            Text {
-                id: label
-                x: treeDelegate.padding
-                   + (treeDelegate.isTreeNode ? (treeDelegate.depth + 1) * treeDelegate.indent : 0)
-                width: treeDelegate.width - treeDelegate.padding - x
-                text: model.display
-                color: "#DDD"
+            GradientStop {
+                position: 1.0
+                color: "transparent"
             }
         }
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: entitiesList.top
     }
 
     Button {
@@ -72,10 +75,19 @@ Item {
         id: filterInput
         placeholderText: "Filter entities..."
         anchors.left: clearButton.right
+        anchors.right: saveButton.left
+        anchors.top: parent.top
+        anchors.margins: 5
+    }
+
+    Button {
+        id: saveButton
+        height: filterInput.height
+        text: "Save"
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: 5
 
-        onEditingFinished: core.entitiesProxy.setFilterFixedString(text)
+        onClicked: core.saveEntities()
     }
 }

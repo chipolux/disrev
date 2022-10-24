@@ -6,6 +6,9 @@ import QtQuick.Layouts
 import voidtweak
 
 Item {
+    Keys.onUpPressed: resultsList.flick(0, 800)
+    Keys.onDownPressed: resultsList.flick(0, -800)
+
     ListView {
         id: resultsList
         model: core.results

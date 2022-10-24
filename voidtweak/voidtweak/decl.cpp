@@ -1,9 +1,78 @@
 #include "decl.h"
 
 #include <QDebug>
+#include <QVariant>
 
 namespace decl
 {
+
+EntityEntry::EntityEntry(const Entry &entry, QObject *parent)
+    : QObject(parent)
+    , m_key(entry.first)
+    , m_value()
+    , m_entries()
+    , m_isKiscule(false)
+{
+    if (entry.second.canConvert<Scope>()) {
+        if (entry.first == u"m_kiscule"_qs) {
+            m_isKiscule = true;
+        }
+        const Scope scope = entry.second.value<Scope>();
+        for (const auto &e : scope) {
+            m_entries.append(new EntityEntry(e, this));
+        }
+    } else {
+        m_value = entry.second.toString();
+    }
+}
+
+void EntityEntry::toByteArray(QByteArray &stream, const int &depth) const
+{
+    const QString prefix(depth, '\t');
+    if (m_entries.isEmpty()) {
+        stream.append(u"%1%2 = %3;\n"_qs.arg(prefix, m_key, m_value).toUtf8());
+    } else {
+        stream.append(u"%1%2 = {\n"_qs.arg(prefix, m_key).toUtf8());
+        for (const auto e : m_entries) {
+            e->toByteArray(stream, depth + 1);
+        }
+        stream.append(u"%1}\n"_qs.arg(prefix).toUtf8());
+    }
+}
+
+Entity::Entity(const Scope &scope, QObject *parent)
+    : QObject(parent)
+    , m_entityId()
+    , m_entityType()
+    , m_definitionType()
+    , m_entries()
+{
+    for (const auto &e : scope) {
+        if (e.first == u"entityId"_qs) {
+            m_entityId = e.second.toString();
+        } else if (e.first == u"entityType"_qs) {
+            m_entityType = e.second.toString();
+        } else if (e.first == u"definitionType"_qs) {
+            m_definitionType = e.second.toString();
+        } else {
+            m_entries.append(new EntityEntry(e, this));
+        }
+    }
+}
+
+bool Entity::isValid() const
+{
+    return !m_entityId.isEmpty() && !m_entityType.isEmpty() && !m_definitionType.isEmpty();
+}
+
+void Entity::toByteArray(QByteArray &stream) const
+{
+    stream.append(u"%1 {\n\t%2 %3 {\n"_qs.arg(m_definitionType, m_entityType, m_entityId).toUtf8());
+    for (const auto e : m_entries) {
+        e->toByteArray(stream, 2);
+    }
+    stream.append("\t}\n}\n");
+}
 
 QString parse(const QByteArray &data, QList<Scope> &entities)
 {
@@ -24,6 +93,8 @@ QString parse(const QByteArray &data, QList<Scope> &entities)
             inEscape = false;
             continue;
         } else if (c == '\\') {
+            // keep escape since we might write this back out unmodified
+            token.append(c);
             inEscape = true;
             continue;
         }
@@ -103,6 +174,19 @@ QString parse(const QByteArray &data, QList<Scope> &entities)
     }
     qInfo() << "Loaded entities:" << entities.count();
     return {};
+}
+
+void write(const QList<Entity *> &entities, QByteArray &stream)
+{
+    qInfo() << "Started writing entities...";
+    stream.append("Version 6\n");
+    for (const auto e : entities) {
+        if (!e->isValid()) {
+            continue;
+        }
+        e->toByteArray(stream);
+    }
+    qInfo() << "Wrote entities:" << stream.size();
 }
 
 } // namespace decl
