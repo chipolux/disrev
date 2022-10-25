@@ -243,8 +243,8 @@ class MapResources:
                     # sometimes there are multiple entries that have the same
                     # id, but they always appear to be images (base w/ mip levels)
                     "id": struct.unpack(">L", data[offset : offset + 4])[0],
-                    # TODO: this data seems to all be identical between entries
-                    "data": data[offset + 4 : offset + 28],
+                    # NOTE: this data is always null bytes with an 0x80 terminator
+                    # "data": data[offset + 4 : offset + 28],
                 }
             )
 
