@@ -29,14 +29,18 @@ EntityEntry::EntityEntry(const Entry &entry, QObject *parent)
 void EntityEntry::toByteArray(QByteArray &stream, const int &depth) const
 {
     const QString prefix(depth, '\t');
-    if (m_entries.isEmpty()) {
+    if (!m_value.isEmpty()) {
         stream.append(u"%1%2 = %3;\n"_qs.arg(prefix, m_key, m_value).toUtf8());
-    } else {
+    } else if (!m_entries.isEmpty()) {
         stream.append(u"%1%2 = {\n"_qs.arg(prefix, m_key).toUtf8());
         for (const auto e : m_entries) {
             e->toByteArray(stream, depth + 1);
         }
         stream.append(u"%1}\n"_qs.arg(prefix).toUtf8());
+    } else {
+        // NOTE: some entries in the game are scopes with no child entries
+        //       this just places them back in...
+        stream.append(u"%1%2 = {}\n"_qs.arg(prefix, m_key).toUtf8());
     }
 }
 
