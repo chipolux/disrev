@@ -14,6 +14,10 @@ the `test_export()` function for 90% of that.
 - [ ] Interpret custom asset data formats. (bimage7, bwm, etc.)
 - [ ] Modify binary assets and repack. (move wall/table/chair or something)
 
+You can find a list of all packed file extensions with some basic notes [here.](docs/dst-exts.txt)
+
+And a csv of Type, SrcExt, DstExt combos [here.](docs/type-src-dst-combos.csv)
+
 <details>
 <summary><h3>Installation Directory</h3></summary>
 
@@ -175,5 +179,5 @@ They control:
 
 I have written a simple parser for them in `entlib.py`.
 
-[See a more detailed description of the file format here.](formats/entities.md)
+[See a more detailed description of the file format here.](docs/entities.md)
 </details>
