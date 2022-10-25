@@ -13,7 +13,6 @@ Item {
         id: resultsList
         model: core.results
         enabled: !core.busy
-        spacing: 2
         boundsBehavior: ListView.StopAtBounds
         interactive: !contextMenu.visible
         anchors.top: searchStatusLabel.bottom

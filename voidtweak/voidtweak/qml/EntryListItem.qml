@@ -7,7 +7,6 @@ Rectangle {
     implicitWidth: 200
     implicitHeight: 80
     color: index % 2 ? "#555" : "#444"
-    radius: 4
 
     signal menuRequested
 

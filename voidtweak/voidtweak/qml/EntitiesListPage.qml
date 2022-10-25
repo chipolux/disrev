@@ -17,7 +17,6 @@ Item {
                                   e => e.entityId.includes(page.filter))
         enabled: !core.busy
         interactive: !entityMenu.visible
-        spacing: 3
         boundsBehavior: ListView.StopAtBounds
         anchors.top: filterInput.bottom
         anchors.left: parent.left
@@ -75,23 +74,6 @@ Item {
         anchors.bottom: entitiesList.bottom
         anchors.right: parent.right
         anchors.rightMargin: 5
-    }
-
-    Rectangle {
-        gradient: Gradient {
-            GradientStop {
-                position: 0.85
-                color: rootWindow.color
-            }
-            GradientStop {
-                position: 1.0
-                color: "transparent"
-            }
-        }
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: entitiesList.top
     }
 
     Button {

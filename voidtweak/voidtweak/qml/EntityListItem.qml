@@ -7,7 +7,6 @@ Rectangle {
     implicitWidth: 200
     implicitHeight: 30
     color: index % 2 ? "#555" : "#444"
-    radius: 4
     border.width: selected ? 2 : 0
     border.color: "orange"
 

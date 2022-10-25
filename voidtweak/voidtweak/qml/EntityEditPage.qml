@@ -10,7 +10,6 @@ Item {
     Rectangle {
         id: entriesContainer
         color: "#444"
-        radius: 4
         width: parent.width
         clip: true
         anchors.top: infoContainer.bottom
@@ -48,7 +47,6 @@ Item {
         height: 30
         width: parent.width
         color: "#444"
-        radius: 4
 
         Label {
             text: !!entity ? `${entity.entityType} ${entity.entityId}` : "Select one entity to edit..."
