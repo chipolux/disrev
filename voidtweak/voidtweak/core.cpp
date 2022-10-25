@@ -26,6 +26,7 @@ Core::Core(QObject *parent)
     connect(this, &Core::exportEntry, m_rm, &ResourceManager::exportEntry);
     connect(this, &Core::importEntry, m_rm, &ResourceManager::importEntry);
     connect(this, &Core::loadEntities, m_rm, &ResourceManager::loadEntities);
+    connect(this, &Core::exportAllEntries, m_rm, &ResourceManager::exportAllEntries);
     connect(m_rm, &ResourceManager::statusChanged, this, &Core::rmStatusChanged);
     connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);

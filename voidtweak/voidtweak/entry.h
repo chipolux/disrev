@@ -29,6 +29,8 @@ class Entry : public QObject
     Q_PROPERTY(QString dstSuffix READ dstSuffix CONSTANT)
     Q_PROPERTY(QString srcFileName READ srcFileName CONSTANT)
     Q_PROPERTY(QString dstFileName READ dstFileName CONSTANT)
+    Q_PROPERTY(QString srcDir READ srcDir CONSTANT)
+    Q_PROPERTY(QString dstDir READ dstDir CONSTANT)
 
   public:
     explicit Entry(const int &container, QObject *parent);
@@ -37,6 +39,8 @@ class Entry : public QObject
     QString dstSuffix() const { return QFileInfo(dst).suffix(); }
     QString srcFileName() const { return QFileInfo(src).fileName(); }
     QString dstFileName() const { return QFileInfo(dst).fileName(); }
+    QString srcDir() const { return QFileInfo(src).dir().path(); }
+    QString dstDir() const { return QFileInfo(dst).dir().path(); }
 };
 QDebug operator<<(QDebug d, const Entry *e);
 

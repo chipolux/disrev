@@ -17,7 +17,7 @@ ResourceManager::ResourceManager(QObject *parent)
 void ResourceManager::loadIndexes()
 {
     emit statusChanged(true, {});
-    qInfo() << "Started loading...";
+    qDebug() << "Started loading...";
     qDeleteAllLater(m_containers);
     if (!loadMasterIndex())
         return;
@@ -27,7 +27,7 @@ void ResourceManager::loadIndexes()
     for (const auto c : m_containers) {
         entryCount += c->entries.count();
     }
-    qInfo() << "Finished loading...";
+    qDebug() << "Finished loading...";
     emit indexesLoaded(m_containers.count(), entryCount);
     emit statusChanged(false, {});
 }
@@ -179,7 +179,7 @@ bool ResourceManager::loadChildIndexes()
 void ResourceManager::search(const QString &query)
 {
     emit statusChanged(true, {});
-    qInfo() << "Searching for:" << query;
+    qDebug() << "Searching for:" << query;
     for (const auto c : m_containers) {
         for (const auto e : c->entries) {
             if (e->src.contains(query) || e->dst.contains(query)) {
@@ -187,7 +187,7 @@ void ResourceManager::search(const QString &query)
             }
         }
     }
-    qInfo() << "Finished searching...";
+    qDebug() << "Finished searching...";
     emit statusChanged(false, {});
 }
 
@@ -256,6 +256,47 @@ void ResourceManager::loadEntities(const QPointer<Entry> ref)
     }
 }
 
+void ResourceManager::exportAllEntries(QUrl path)
+{
+    emit statusChanged(true, {});
+    QDir dir(path.toLocalFile());
+    if (!dir.mkpath(dir.absolutePath())) {
+        emit statusChanged(false, u"Failed to create directory: %1"_qs.arg(dir.absolutePath()));
+        return;
+    }
+    qDebug() << "Starting full export...";
+    QByteArray buffer;
+    qint64 bytesWritten = 0;
+    for (const auto c : m_containers) {
+        for (const auto e : c->entries) {
+            const QString dstDir = dir.absoluteFilePath(e->dstDir());
+            const QString dst = dir.absoluteFilePath(e->dst);
+            if (!dir.mkpath(dstDir)) {
+                emit statusChanged(false, u"Failed to create directory: %1"_qs.arg(dstDir));
+                return;
+            }
+            buffer.resize(0);
+            if (!extract(e, buffer)) {
+                return;
+            }
+            QFile f(dst);
+            if (!f.open(QFile::WriteOnly)) {
+                emit statusChanged(false, u"Failed to open file: %1"_qs.arg(dst));
+                return;
+            }
+            const auto written = f.write(buffer);
+            f.close();
+            if (written != buffer.size()) {
+                emit statusChanged(false, u"Failed to write file: %1"_qs.arg(dst));
+                return;
+            }
+            bytesWritten += written;
+        }
+    }
+    qDebug() << "Exported" << bytesWritten / 1024 / 1024 << "mb of data!";
+    emit statusChanged(false, {});
+}
+
 const Container *ResourceManager::container(const QPointer<Entry> ref)
 {
     Container *c = nullptr;
@@ -288,7 +329,7 @@ bool ResourceManager::extract(const QPointer<Entry> ref, QByteArray &output)
     const Entry *e = entry(c, ref);
     if (!e)
         return false;
-    qInfo() << "Starting extraction of" << e;
+    qDebug() << "Starting extraction of" << e;
     QFile f(c->resourcePath(e->flags2));
     if (!f.open(QFile::ReadOnly)) {
         emit statusChanged(false, u"Failed to open resource file: %1"_qs.arg(f.fileName()));
@@ -313,7 +354,7 @@ bool ResourceManager::extract(const QPointer<Entry> ref, QByteArray &output)
     } else {
         output = rawData;
     }
-    qInfo() << "Finished extraction," << output.size() << "bytes!";
+    qDebug() << "Finished extraction," << output.size() << "bytes!";
     return true;
 }
 
@@ -325,7 +366,7 @@ bool ResourceManager::insert(const QPointer<Entry> ref, QByteArray &rawData)
     const Entry *e = entry(c, ref);
     if (!e)
         return false;
-    qInfo() << "Starting insertion of" << e;
+    qDebug() << "Starting insertion of" << e;
     QByteArray data;
     if (e->size != e->sizePacked) {
         if (!zutils::deflt(rawData, data)) {
@@ -354,6 +395,6 @@ bool ResourceManager::insert(const QPointer<Entry> ref, QByteArray &rawData)
     }
     f.write(data);
     f.close();
-    qInfo() << "Finished insertion," << data.size() << "bytes!";
+    qDebug() << "Finished insertion," << data.size() << "bytes!";
     return true;
 }

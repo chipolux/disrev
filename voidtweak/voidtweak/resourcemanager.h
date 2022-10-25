@@ -34,6 +34,7 @@ class ResourceManager : public QObject
     void exportEntry(const QPointer<Entry> ref, QUrl path);
     void importEntry(const QPointer<Entry> ref, QUrl path);
     void loadEntities(const QPointer<Entry> ref);
+    void exportAllEntries(QUrl path);
 
   private:
     QList<Container *> m_containers;

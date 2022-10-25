@@ -87,11 +87,23 @@ Item {
         height: searchInput.height
         text: "Load Indexes"
         enabled: !core.busy
-        anchors.right: parent.right
+        anchors.right: exportAllButton.left
         anchors.top: parent.top
         anchors.margins: 5
 
         onClicked: core.loadIndexes()
+    }
+
+    Button {
+        id: exportAllButton
+        height: searchInput.height
+        text: "Export All"
+        enabled: !core.busy && !!core.entryCount
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 5
+
+        onClicked: folderDialog.open()
     }
 
     Label {
@@ -193,6 +205,13 @@ Item {
                 core.importEntry(fileDialog.entry, fileDialog.selectedFile)
             }
         }
+    }
+
+    FolderDialog {
+        id: folderDialog
+        currentFolder: StandardPaths.writableLocation(
+                           StandardPaths.HomeLocation)
+        onAccepted: core.exportAllEntries(folderDialog.selectedFolder)
     }
 
     BusyIndicator {
