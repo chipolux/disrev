@@ -17,7 +17,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.topMargin: 5
+        anchors.topMargin: 3
 
         Flickable {
             id: entriesFlickable
@@ -51,7 +51,7 @@ Item {
         radius: 4
 
         Label {
-            text: !!entity ? `${entity.entityType} ${entity.entityId}` : "Select entity..."
+            text: !!entity ? `${entity.entityType} ${entity.entityId}` : "Select one entity to edit..."
             color: "#DDD"
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter

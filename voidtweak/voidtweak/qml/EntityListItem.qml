@@ -11,7 +11,6 @@ Rectangle {
     border.width: selected ? 2 : 0
     border.color: "orange"
 
-    signal editRequested
     property Entity entity
     property bool selected: false
 
@@ -24,11 +23,5 @@ Rectangle {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.margins: 10
-    }
-
-    MouseArea {
-        anchors.fill: parent
-
-        onClicked: control.editRequested()
     }
 }

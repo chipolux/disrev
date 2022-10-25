@@ -64,6 +64,7 @@ class Core : public QObject
     void clear();
     void clearEntities();
     void saveEntities();
+    void deleteEntities(const QList<decl::Entity *> &entities);
 
   private slots:
     void rmStatusChanged(bool busy, QString error);

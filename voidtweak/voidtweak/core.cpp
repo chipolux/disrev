@@ -223,3 +223,18 @@ void Core::saveEntities()
         emit insertEntry(m_entry, data);
     }
 }
+
+void Core::deleteEntities(const QList<decl::Entity *> &entities)
+{
+    bool changed = false;
+    for (const auto e : entities) {
+        if (m_entities.contains(e)) {
+            e->deleteLater();
+            m_entities.removeAll(e);
+            changed = true;
+        }
+    }
+    if (changed) {
+        emit entitiesChanged();
+    }
+}
