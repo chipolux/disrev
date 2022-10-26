@@ -72,6 +72,8 @@ Item {
     TextField {
         id: searchInput
         placeholderText: "Search in source and destination..."
+        selectByMouse: true
+        selectionColor: "orange"
         enabled: !core.busy
         anchors.left: parent.left
         anchors.right: loadIndexesButton.left

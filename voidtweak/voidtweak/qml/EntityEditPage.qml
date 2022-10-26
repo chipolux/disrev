@@ -5,6 +5,7 @@ import voidtweak
 Item {
     id: page
 
+    signal editEntry(EntityEntry entry)
     property Entity entity
 
     Rectangle {
@@ -36,6 +37,10 @@ Item {
                     EntityEntryListItem {
                         width: parent.width
                         entry: modelData
+
+                        onEditRequested: function (entry) {
+                            page.editEntry(entry)
+                        }
                     }
                 }
             }

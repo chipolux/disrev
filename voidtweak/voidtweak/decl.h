@@ -20,9 +20,14 @@ class EntityEntry : public QObject
     QML_ELEMENT
     QML_UNCREATABLE("Backend only.")
 
+    Q_PROPERTY(QObject *scope READ parent CONSTANT)
+
   public:
     explicit EntityEntry(const Entry &entry, QObject *parent);
     void toByteArray(QByteArray &stream, const int &depth = 0) const;
+
+  public slots:
+    void deleteEntry(decl::EntityEntry *entry);
 
   private:
     RW_PROP(QString, key, setKey)
@@ -41,6 +46,9 @@ class Entity : public QObject
     explicit Entity(const Scope &scope, QObject *parent);
     bool isValid() const;
     void toByteArray(QByteArray &stream) const;
+
+  public slots:
+    void deleteEntry(decl::EntityEntry *entry);
 
   private:
     RW_PROP(QString, entityId, setEntityId)

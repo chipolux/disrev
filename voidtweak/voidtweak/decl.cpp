@@ -44,6 +44,15 @@ void EntityEntry::toByteArray(QByteArray &stream, const int &depth) const
     }
 }
 
+void EntityEntry::deleteEntry(decl::EntityEntry *entry)
+{
+    if (m_entries.contains(entry)) {
+        entry->deleteLater();
+        m_entries.removeAll(entry);
+        emit entriesChanged(m_entries);
+    }
+}
+
 Entity::Entity(const Scope &scope, QObject *parent)
     : QObject(parent)
     , m_entityId()
@@ -76,6 +85,15 @@ void Entity::toByteArray(QByteArray &stream) const
         e->toByteArray(stream, 2);
     }
     stream.append("\t}\n}\n");
+}
+
+void Entity::deleteEntry(decl::EntityEntry *entry)
+{
+    if (m_entries.contains(entry)) {
+        entry->deleteLater();
+        m_entries.removeAll(entry);
+        emit entriesChanged(m_entries);
+    }
 }
 
 QString parse(const QByteArray &data, QList<Scope> &entities)

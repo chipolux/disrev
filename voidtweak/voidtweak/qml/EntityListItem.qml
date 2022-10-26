@@ -6,9 +6,7 @@ Rectangle {
     id: control
     implicitWidth: 200
     implicitHeight: 30
-    color: index % 2 ? "#555" : "#444"
-    border.width: selected ? 2 : 0
-    border.color: "orange"
+    color: selected ? "#a35a00" : (index % 2 ? "#555" : "#444")
 
     property Entity entity
     property bool selected: false

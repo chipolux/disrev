@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import voidtweak
 
 Item {
@@ -7,6 +8,7 @@ Item {
 
     Keys.onUpPressed: entitiesList.flick(0, 800)
     Keys.onDownPressed: entitiesList.flick(0, -800)
+    Keys.onEscapePressed: page.indexes = []
 
     property var indexes: []
     property string filter
@@ -69,11 +71,17 @@ Item {
     EntityEditPage {
         id: entityEditPage
         width: parent.width * 0.7
-        entity: page.indexes.length === 1 ? core.entities[page.indexes[0]] : null
+        entity: page.indexes.length === 1
+                && core.entities.length > page.indexes[0] ? core.entities[page.indexes[0]] : null
         anchors.top: entitiesList.top
         anchors.bottom: entitiesList.bottom
         anchors.right: parent.right
         anchors.rightMargin: 5
+
+        onEditEntry: function (entry) {
+            popup.entry = entry
+            popup.open()
+        }
     }
 
     Button {
@@ -90,6 +98,8 @@ Item {
     TextField {
         id: filterInput
         placeholderText: "Filter entities..."
+        selectByMouse: true
+        selectionColor: "orange"
         anchors.left: clearButton.right
         anchors.right: saveButton.left
         anchors.top: parent.top
@@ -135,8 +145,80 @@ Item {
             height: visible ? undefined : 0
             visible: page.indexes.length > 0
 
-            onTriggered: core.deleteEntities(page.indexes.map(
-                                                 i => entitiesList.model[i]))
+            onTriggered: {
+                core.deleteEntities(page.indexes.map(
+                                        i => entitiesList.model[i]))
+                page.indexes = []
+            }
+        }
+    }
+
+    Popup {
+        id: popup
+        modal: true
+        anchors.centerIn: parent
+
+        property EntityEntry entry
+        property int entriesCount: !!popup.entry ? popup.entry.entries.length : 0
+
+        onClosed: {
+            keyInput.clear()
+            valueInput.clear()
+            popup.entry = null
+        }
+
+        ColumnLayout {
+            spacing: 5
+
+            Label {
+                text: "Key:"
+            }
+
+            TextField {
+                id: keyInput
+                text: !!popup.entry ? popup.entry.key : ""
+                selectByMouse: true
+                selectionColor: "orange"
+                Layout.minimumWidth: 500
+            }
+
+            Label {
+                text: !popup.entriesCount ? "Value:" : `Entries: ${popup.entriesCount}`
+            }
+
+            TextField {
+                id: valueInput
+                text: !!popup.entry ? popup.entry.value : ""
+                visible: !popup.entriesCount
+                selectByMouse: true
+                selectionColor: "orange"
+                Layout.fillWidth: true
+            }
+
+            Button {
+                text: "Save"
+                Layout.fillWidth: true
+
+                onClicked: {
+                    forceActiveFocus()
+                    popup.entry.key = keyInput.text
+                    popup.entry.value = valueInput.text
+                    popup.close()
+                }
+            }
+
+            Button {
+                text: "Delete"
+                Layout.fillWidth: true
+
+                onClicked: {
+                    forceActiveFocus()
+                    if (popup.entry.scope) {
+                        popup.entry.scope.deleteEntry(popup.entry)
+                    }
+                    popup.close()
+                }
+            }
         }
     }
 }
