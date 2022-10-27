@@ -187,6 +187,12 @@ Item {
             height: visible ? undefined : 0
             onTriggered: core.loadEntities(contextMenu.entry)
         }
+        MenuItem {
+            text: "Parse BWM"
+            visible: contextMenu.entry && contextMenu.entry.dstSuffix === "bwm"
+            height: visible ? undefined : 0
+            onTriggered: core.parseBwm(contextMenu.entry)
+        }
     }
 
     FileDialog {

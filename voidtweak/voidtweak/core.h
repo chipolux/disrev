@@ -56,6 +56,7 @@ class Core : public QObject
     void resultsChanged();
     void entitiesChanged();
     void exportAllEntries(QUrl path);
+    void parseBwm(Entry *entry);
 
   public slots:
     void sortResults(const Core::SortOrder &order);

@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QDir>
 
+#include "bwm.h"
 #include "container.h"
 #include "decl.h"
 #include "entry.h"
@@ -294,6 +295,16 @@ void ResourceManager::exportAllEntries(QUrl path)
         }
     }
     qDebug() << "Exported" << bytesWritten / 1024 / 1024 << "mb of data!";
+    emit statusChanged(false, {});
+}
+
+void ResourceManager::parseBwm(const QPointer<Entry> ref)
+{
+    emit statusChanged(true, {});
+    QByteArray data;
+    if (!extract(ref, data))
+        return;
+    bwm::parse(data);
     emit statusChanged(false, {});
 }
 

@@ -21,10 +21,14 @@ find_package(Qt6 COMPONENTS ${QT_MODULES} REQUIRED)
 list(TRANSFORM QT_MODULES PREPEND Qt${QT_VERSION_MAJOR}::)
 
 set(PROJECT_SOURCES
+    bwm.cpp
+    bwm.h
     container.cpp
     container.h
     core.cpp
     core.h
+    decl.cpp
+    decl.h
     entry.cpp
     entry.h
     main.cpp
@@ -34,8 +38,6 @@ set(PROJECT_SOURCES
     resourcemanager.h
     zutils.cpp
     zutils.h
-    decl.h
-    decl.cpp
 )
 set(PROJECT_RESOURCES
     resources/Fira_Code/FiraCode-Bold.ttf
