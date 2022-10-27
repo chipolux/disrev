@@ -200,10 +200,12 @@ Item {
             if (fileDialog.fileMode === FileDialog.SaveFile
                     && !!fileDialog.entry) {
                 core.exportEntry(fileDialog.entry, fileDialog.selectedFile)
+                fileDialog.currentFolder = fileDialog.selectedFile
             }
             if (fileDialog.fileMode === FileDialog.OpenFile
                     && !!fileDialog.entry) {
                 core.importEntry(fileDialog.entry, fileDialog.selectedFile)
+                fileDialog.currentFolder = fileDialog.selectedFile
             }
         }
     }
