@@ -18,6 +18,8 @@ You can find a list of all packed file extensions with some basic notes [here.](
 
 And a csv of Type, SrcExt, DstExt combos [here.](docs/type-src-dst-combos.csv)
 
+A lot of work was already done by the wonderful folks [in this thread!](https://forum.xentax.com/viewtopic.php?t=15518)
+
 <details>
 <summary><h3>Installation Directory</h3></summary>
 
