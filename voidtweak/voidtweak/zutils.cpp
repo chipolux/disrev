@@ -3,14 +3,15 @@
 #include <QDebug>
 #include <QtZlib/zlib.h>
 
-#define ZLIB_CHUNK 16384
+#define ZLIB_INFBUF 0x4000
+#define ZLIB_DEFBUF 0x4000
 
 using namespace zutils;
 
 bool zutils::deflt(QByteArray &input, QByteArray &output)
 {
     int ret;
-    z_Bytef buffer[ZLIB_CHUNK];
+    z_Bytef buffer[ZLIB_DEFBUF];
     z_stream stream;
     output.clear();
 
@@ -27,10 +28,10 @@ bool zutils::deflt(QByteArray &input, QByteArray &output)
     stream.avail_in = input.size();
     do {
         stream.next_out = buffer;
-        stream.avail_out = ZLIB_CHUNK;
+        stream.avail_out = ZLIB_DEFBUF;
         ret = deflate(&stream, Z_FINISH);
-        if (stream.avail_out < ZLIB_CHUNK) {
-            output.append(reinterpret_cast<char *>(buffer), ZLIB_CHUNK - stream.avail_out);
+        if (stream.avail_out < ZLIB_DEFBUF) {
+            output.append(reinterpret_cast<char *>(buffer), ZLIB_DEFBUF - stream.avail_out);
         }
     } while (ret == Z_OK || ret == Z_BUF_ERROR);
     deflateEnd(&stream);
@@ -45,7 +46,7 @@ bool zutils::deflt(QByteArray &input, QByteArray &output)
 bool zutils::inflt(QByteArray &input, QByteArray &output)
 {
     int ret;
-    z_Bytef buffer[ZLIB_CHUNK];
+    z_Bytef buffer[ZLIB_INFBUF];
     z_stream stream;
     output.clear();
 
@@ -62,10 +63,10 @@ bool zutils::inflt(QByteArray &input, QByteArray &output)
     stream.avail_in = input.size();
     do {
         stream.next_out = buffer;
-        stream.avail_out = ZLIB_CHUNK;
+        stream.avail_out = ZLIB_INFBUF;
         ret = inflate(&stream, Z_FINISH);
-        if (stream.avail_out < ZLIB_CHUNK) {
-            output.append(reinterpret_cast<char *>(buffer), ZLIB_CHUNK - stream.avail_out);
+        if (stream.avail_out < ZLIB_INFBUF) {
+            output.append(reinterpret_cast<char *>(buffer), ZLIB_INFBUF - stream.avail_out);
         }
     } while (ret == Z_OK || ret == Z_BUF_ERROR);
     inflateEnd(&stream);
