@@ -206,7 +206,10 @@ Item {
             if (fileDialog.fileMode === FileDialog.SaveFile
                     && !!fileDialog.entry) {
                 core.exportEntry(fileDialog.entry, fileDialog.selectedFile)
-                fileDialog.currentFolder = fileDialog.selectedFile
+                // NOTE: remove the filename, if it does not exist filedialog is upset
+                var url = String(fileDialog.selectedFile)
+                fileDialog.currentFolder = url.substring(0,
+                                                         url.lastIndexOf("/"))
             }
             if (fileDialog.fileMode === FileDialog.OpenFile
                     && !!fileDialog.entry) {
