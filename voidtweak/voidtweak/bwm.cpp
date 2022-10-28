@@ -67,7 +67,7 @@ void parse(const QByteArray &input)
     for (quint32 i = 0; i < vmSize / Matrix::Size; ++i) {
         matrices.append(Matrix(stream));
     }
-    qInfo() << "Read" << matrices.count() << "matrices.";
+    qDebug() << "Read" << matrices.count() << "matrices.";
 
     quint32 vuSize;
     stream >> vuSize;
@@ -91,7 +91,7 @@ void parse(const QByteArray &input)
             return;
         }
     }
-    qInfo() << "Read" << meshCount << "meshes.";
+    qDebug() << "Read" << meshCount << "meshes.";
 
     quint32 objectCount;
     stream >> objectCount;
@@ -104,10 +104,10 @@ void parse(const QByteArray &input)
         stream.readBytes(str, strLen);
         QString matPath = QString::fromUtf8(str, strLen);
         delete[] str;
-        qInfo() << "Object" << matPath << matrices[ms].offset;
+        qDebug() << "Object" << matPath << matrices[ms].offset;
         stream >> lod;
     }
-    qInfo() << "Read" << objectCount << "objects.";
+    qDebug() << "Read" << objectCount << "objects.";
 
     quint32 instanceCount;
     stream >> instanceCount;
@@ -122,37 +122,73 @@ void parse(const QByteArray &input)
             return;
         }
     }
-    qInfo() << "Read" << instanceCount << "instances.";
+    qDebug() << "Read" << instanceCount << "instances.";
 
-    // mystery junk?
-    {
-        quint32 c1, c2, c3;
-        stream >> c1;
-        stream.skipRawData(4);
-        stream >> c2;
-        stream.skipRawData(4);
-        stream.skipRawData(4 * c1);
-        qDebug() << "Skipped" << c1 << "uint32.";
-        stream.skipRawData(4 * c2);
-        qDebug() << "Skipped" << c2 << "uint32.";
-        stream >> c3;
-        for (quint32 i = 0; i < c3; ++i) {
-            stream.skipRawData(4);
-            quint32 c4;
-            stream >> c4;
-            stream.skipRawData(4 * c4);
-        }
-        qDebug() << "Skipped" << c3 << "mystery entries.";
-    }
+    // TODO: what are all theses lists and groups of indexes for, they all seem
+    //       to be valid indexes for the list of instances/matrices
 
-    quint32 groupCount;
-    stream >> groupCount;
-    for (quint32 i = 0; i < groupCount; ++i) {
-        quint32 indexCount;
-        stream >> indexCount;
-        stream.skipRawData(4 * indexCount);
+    quint32 idx1Count, idx2Count, idx3Count, idx4Count;
+    stream >> idx1Count >> idx2Count >> idx3Count >> idx4Count;
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before idx1!";
+        return;
     }
-    qInfo() << "Read" << groupCount << "groups.";
+    stream.skipRawData(idx1Count * 4);
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before idx2!";
+        return;
+    }
+    stream.skipRawData(idx2Count * 4);
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before idx3!";
+        return;
+    }
+    stream.skipRawData(idx3Count * 4);
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before idx4!";
+        return;
+    }
+    stream.skipRawData(idx4Count * 4);
+    qDebug() << "Skipped" << idx1Count << "indexes.";
+    qDebug() << "Skipped" << idx2Count << "indexes.";
+    qDebug() << "Skipped" << idx3Count << "indexes.";
+    qDebug() << "Skipped" << idx4Count << "indexes.";
+
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before g1!";
+        return;
+    }
+    quint32 g1Count;
+    stream >> g1Count;
+    for (quint32 i = 0; i < g1Count; ++i) {
+        stream.skipRawData(4);
+        quint32 g1aCount;
+        stream >> g1aCount;
+        stream.skipRawData(g1aCount * 4);
+    }
+    qDebug() << "Skipped" << g1Count << "groups.";
+
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before g2!";
+        return;
+    }
+    quint32 g2Count;
+    stream >> g2Count;
+    for (quint32 i = 0; i < g2Count; ++i) {
+        quint32 g2aCount;
+        stream >> g2aCount;
+        stream.skipRawData(g2aCount * 4);
+    }
+    qDebug() << "Skipped" << g2Count << "groups.";
+
+    if (stream.atEnd()) {
+        qWarning() << "EOF reach before idx5!";
+        return;
+    }
+    quint32 idx5Count;
+    stream >> idx5Count;
+    stream.skipRawData(idx5Count * 4);
+    qDebug() << "Skipped" << idx5Count << "indexes.";
 }
 
 } // namespace bwm
