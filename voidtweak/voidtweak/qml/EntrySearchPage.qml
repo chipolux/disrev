@@ -225,10 +225,4 @@ Item {
                            StandardPaths.HomeLocation)
         onAccepted: core.exportAllEntries(folderDialog.selectedFolder)
     }
-
-    BusyIndicator {
-        running: core.busy
-        anchors.fill: resultsList
-        anchors.margins: 40
-    }
 }

@@ -48,6 +48,7 @@ set(PROJECT_RESOURCES
     resources/Fira_Code/FiraCode-SemiBold.ttf
     resources/icon.png
     resources/icon.svg
+    resources/rune-spinner.gif
 )
 file(GLOB_RECURSE PROJECT_QMLFILES RELATIVE ${PROJECT_SOURCE_DIR} CONFIGURE_DEPENDS "*.qml")
 
