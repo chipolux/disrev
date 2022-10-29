@@ -4,9 +4,7 @@
 #include <QDebug>
 #include <QDir>
 
-#include "bwm.h"
 #include "container.h"
-#include "decl.h"
 #include "entry.h"
 #include "zutils.h"
 
@@ -298,14 +296,20 @@ void ResourceManager::exportAllEntries(QUrl path)
     emit statusChanged(false, {});
 }
 
-void ResourceManager::parseBwm(const QPointer<Entry> ref)
+void ResourceManager::loadBwm(const QPointer<Entry> ref)
 {
     emit statusChanged(true, {});
     QByteArray data;
     if (!extract(ref, data))
         return;
-    bwm::parse(data);
-    emit statusChanged(false, {});
+    QList<bwm::PODObject> objects;
+    const QString error = bwm::parse(data, objects);
+    if (error.isEmpty()) {
+        emit bwmLoaded(ref, objects);
+        emit statusChanged(false, {});
+    } else {
+        emit statusChanged(false, error);
+    }
 }
 
 const Container *ResourceManager::container(const QPointer<Entry> ref)

@@ -27,12 +27,13 @@ Core::Core(QObject *parent)
     connect(this, &Core::importEntry, m_rm, &ResourceManager::importEntry);
     connect(this, &Core::loadEntities, m_rm, &ResourceManager::loadEntities);
     connect(this, &Core::exportAllEntries, m_rm, &ResourceManager::exportAllEntries);
-    connect(this, &Core::parseBwm, m_rm, &ResourceManager::parseBwm);
+    connect(this, &Core::loadBwm, m_rm, &ResourceManager::loadBwm);
     connect(m_rm, &ResourceManager::statusChanged, this, &Core::rmStatusChanged);
     connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);
     connect(m_rm, &ResourceManager::extractResult, this, &Core::extractResult);
     connect(m_rm, &ResourceManager::entitiesLoaded, this, &Core::entitiesLoaded);
+    connect(m_rm, &ResourceManager::bwmLoaded, this, &Core::bwmLoaded);
     m_rmThread->start();
 
     m_searchResultDebounce->setInterval(100);
@@ -215,6 +216,8 @@ void Core::entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities
     qInfo() << "Built entities:" << m_entities.count();
     emit entitiesChanged();
 }
+
+void Core::bwmLoaded(const QPointer<Entry>, QList<bwm::PODObject>) {}
 
 void Core::saveEntities()
 {

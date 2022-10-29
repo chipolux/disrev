@@ -88,10 +88,15 @@
  * }
  */
 
+#include <QList>
+#include <QString>
 #include <QtGlobal>
 
 namespace bwm
 {
+
+using Group = QList<quint32>;
+using LabeledGroup = QPair<quint32, QList<quint32>>;
 
 /* Matrices are stored as a set of 12 single precision floats like so:
  *    ┌           ┐┌    ┐
@@ -102,17 +107,50 @@ namespace bwm
  * This is your standard affine transformation matrix minus the identity row
  * for w. First three columns are transformation, final column is translation.
  */
-struct Matrix {
+struct PODMatrix {
     qint64 offset;
     float values[12];
-
-    const static inline quint32 Size{12 * 4};
-
-    explicit Matrix();
-    explicit Matrix(QDataStream &stream);
 };
+QDebug operator<<(QDebug d, const PODMatrix &m);
 
-void parse(const QByteArray &input);
+struct PODMesh {
+    qint64 offset;
+    quint32 unk1; // mystery data (expect 02 00 00 00)
+    quint32 vco;  // vertex coord offset
+    quint32 vcs;  // vertex coord stride (expect 12)
+    quint32 vdo;  // vertex data offset
+    quint32 vds;  // vertex data stride (expect 20)
+    quint32 unk2; // mystery data (expect 12 34 56 78)
+    quint32 vio;  // vertex index offset
+    quint32 vic;  // vertex index count
+    quint32 vc;   // vertex count
+    char unk3[5]; // mystery data (expect 03 00 00 00 01)
+};
+QDebug operator<<(QDebug d, const PODMesh &m);
+
+struct PODInstance {
+    qint64 offset;
+    float min[3];
+    float max[3];
+    quint32 unk1;
+    qint16 unk2;
+};
+QDebug operator<<(QDebug d, const PODInstance &m);
+
+struct PODObject {
+    qint64 offset;
+    quint32 indexStart; // matrix/instance start
+    quint32 indexEnd;   // matrix/instance end
+    quint32 meshIndex;  // mesh index
+    quint8 isFlipped;   // is flipped
+    QString materialPath;
+    quint32 lod;
+    QList<PODMatrix> matrices;
+    QList<PODInstance> instances;
+};
+QDebug operator<<(QDebug d, const PODObject &m);
+
+QString parse(const QByteArray &input, QList<PODObject> &objects);
 
 } // namespace bwm
 

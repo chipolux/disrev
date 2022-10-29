@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QtQml>
 
+#include "bwm.h"
 #include "decl.h"
 
 class Entry;
@@ -25,6 +26,7 @@ class ResourceManager : public QObject
     void searchResult(const QPointer<Entry> entry);
     void extractResult(const QPointer<Entry> ref, QByteArray data);
     void entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities);
+    void bwmLoaded(const QPointer<Entry> ref, QList<bwm::PODObject> objects);
 
   public slots:
     void loadIndexes();
@@ -35,8 +37,7 @@ class ResourceManager : public QObject
     void importEntry(const QPointer<Entry> ref, QUrl path);
     void loadEntities(const QPointer<Entry> ref);
     void exportAllEntries(QUrl path);
-
-    void parseBwm(const QPointer<Entry> ref);
+    void loadBwm(const QPointer<Entry> ref);
 
   private:
     QList<Container *> m_containers;

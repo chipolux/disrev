@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QtQml>
 
+#include "bwm.h"
 #include "decl.h"
 #include "entry.h"
 #include "qtutils.h"
@@ -56,7 +57,7 @@ class Core : public QObject
     void resultsChanged();
     void entitiesChanged();
     void exportAllEntries(QUrl path);
-    void parseBwm(Entry *entry);
+    void loadBwm(Entry *entry);
 
   public slots:
     void sortResults(const Core::SortOrder &order);
@@ -73,6 +74,7 @@ class Core : public QObject
     void searchResult(const QPointer<Entry> entry);
     void extractResult(const QPointer<Entry> ref, QByteArray data);
     void entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities);
+    void bwmLoaded(const QPointer<Entry> ref, QList<bwm::PODObject> objects);
 
   private:
     RW_PROP(QString, error, setError)

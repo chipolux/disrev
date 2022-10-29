@@ -188,10 +188,10 @@ Item {
             onTriggered: core.loadEntities(contextMenu.entry)
         }
         MenuItem {
-            text: "Parse BWM"
+            text: "Load BWM"
             visible: contextMenu.entry && contextMenu.entry.dstSuffix === "bwm"
             height: visible ? undefined : 0
-            onTriggered: core.parseBwm(contextMenu.entry)
+            onTriggered: core.loadBwm(contextMenu.entry)
         }
     }
 

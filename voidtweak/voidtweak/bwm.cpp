@@ -8,26 +8,36 @@
 namespace bwm
 {
 
-Matrix::Matrix()
-    : offset(0)
-    , values{0}
+QDebug operator<<(QDebug d, const PODMatrix &m)
 {
+    d.nospace() << "Matrix(offset=" << m.offset << ")";
+    return d;
 }
 
-Matrix::Matrix(QDataStream &stream)
-    : offset(0)
-    , values{0}
+QDebug operator<<(QDebug d, const PODMesh &m)
 {
-    offset = stream.device()->pos();
-    stream >> values[0] >> values[1] >> values[2] >> values[3] >> values[4] >> values[5] >>
-        values[6] >> values[7] >> values[8] >> values[9] >> values[10] >> values[11];
+    d.nospace() << "Mesh(offset=" << m.offset << ", vco=" << m.vco << ", vdo=" << m.vdo << ")";
+    return d;
 }
 
-void parse(const QByteArray &input)
+QDebug operator<<(QDebug d, const PODObject &o)
+{
+    d.nospace() << "Object(offset=" << o.offset << ", indexStart=" << o.indexStart
+                << ", indexEnd=" << o.indexEnd << ", mesh=" << o.meshIndex << ", lod=" << o.lod
+                << ", mat=" << o.materialPath << ")";
+    return d;
+}
+
+QDebug operator<<(QDebug d, const PODInstance &i)
+{
+    d.nospace() << "Instance(offset=" << i.offset << ", min=" << i.min << ", max=" << i.max << ")";
+    return d;
+}
+
+QString parse(const QByteArray &input, QList<PODObject> &objects)
 {
     if (input.first(4) != "BWM1") {
-        qWarning() << "Bad magic:" << input.first(4);
-        return;
+        return u"Bad magic:"_qs.arg(input.first(4));
     }
     QDataStream stream(input);
     stream.setByteOrder(QDataStream::LittleEndian);
@@ -39,8 +49,7 @@ void parse(const QByteArray &input)
     stream >> v2;
     stream >> v3;
     if (v1 != 21 || v2 != 1 || v3 != 2) {
-        qWarning() << "Bad version info?:" << v1 << v2 << v3;
-        return;
+        return u"Bad version info: %1.%2.%3"_qs.arg(v1).arg(v2).arg(v3);
     }
 
     quint32 vcSize;
@@ -63,9 +72,14 @@ void parse(const QByteArray &input)
 
     quint32 vmSize;
     stream >> vmSize;
-    QList<Matrix> matrices;
-    for (quint32 i = 0; i < vmSize / Matrix::Size; ++i) {
-        matrices.append(Matrix(stream));
+    QList<PODMatrix> matrices;
+    for (quint32 i = 0; i < vmSize / (12 * 4); ++i) {
+        PODMatrix m;
+        m.offset = stream.device()->pos();
+        stream >> m.values[0] >> m.values[1] >> m.values[2] >> m.values[3] >> m.values[4] >>
+            m.values[5] >> m.values[6] >> m.values[7] >> m.values[8] >> m.values[9] >>
+            m.values[10] >> m.values[11];
+        matrices.append(m);
     }
     qDebug() << "Read" << matrices.count() << "matrices.";
 
@@ -77,118 +91,136 @@ void parse(const QByteArray &input)
 
     quint32 meshCount;
     stream >> meshCount;
+    QList<PODMesh> meshes;
     for (quint32 i = 0; i < meshCount; ++i) {
-        auto mOffset = stream.device()->pos();
-        quint32 md1, vco, vcs, vdo, vds, md2, vio, vic, vc;
-        stream >> md1 >> vco >> vcs >> vdo >> vds >> md2 >> vio >> vic >> vc;
-        stream.skipRawData(5);
-        if (md1 != 2) {
-            qWarning() << "Mesh with bad starting md1:" << i << mOffset << md1;
-            return;
+        PODMesh m;
+        m.offset = stream.device()->pos();
+        stream >> m.unk1 >> m.vco >> m.vcs >> m.vdo >> m.vds >> m.unk2 >> m.vio >> m.vic >> m.vc;
+        stream.readRawData(m.unk3, 5);
+        if (m.unk1 != 2) {
+            return u"Mesh %1 has bad unk1 %2"_qs.arg(i).arg(m.unk1);
         }
-        if (md2 != 0x12345678) {
-            qWarning() << "Mesh with bad starting md2:" << i << mOffset << md2;
-            return;
+        if (m.unk2 != 0x12345678) {
+            return u"Mesh %1 has bad unk2 %2"_qs.arg(i).arg(m.unk2);
         }
+        meshes.append(m);
     }
-    qDebug() << "Read" << meshCount << "meshes.";
+    qDebug() << "Read" << meshes.count() << "meshes.";
 
     quint32 objectCount;
     stream >> objectCount;
     for (quint32 i = 0; i < objectCount; ++i) {
-        quint32 ms, me, mi, strLen, lod;
-        quint8 isFlipped;
-        stream >> ms >> me >> mi;
-        stream >> isFlipped;
+        PODObject o;
+        o.offset = stream.device()->pos();
+        stream >> o.indexStart >> o.indexEnd >> o.meshIndex >> o.isFlipped;
+        quint32 strLen;
         char *str = nullptr;
         stream.readBytes(str, strLen);
-        QString matPath = QString::fromUtf8(str, strLen);
+        o.materialPath = QString::fromUtf8(str, strLen);
         delete[] str;
-        qDebug() << "Object" << matPath << matrices[ms].offset;
-        stream >> lod;
+        stream >> o.lod;
+        objects.append(o);
     }
-    qDebug() << "Read" << objectCount << "objects.";
+    qDebug() << "Read" << objects.count() << "objects.";
 
     quint32 instanceCount;
     stream >> instanceCount;
+    QList<PODInstance> instances;
     for (quint32 i = 0; i < instanceCount; ++i) {
-        float minX, minY, minZ, maxX, maxY, maxZ;
-        stream >> minX >> minY >> minZ >> maxX >> maxY >> maxZ;
-        stream.skipRawData(4);
-        qint16 unk;
-        stream >> unk;
-        if (unk != -1) {
-            qWarning() << "Instance with bad unk:" << i << unk;
-            return;
+        PODInstance ins;
+        ins.offset = stream.device()->pos();
+        stream >> ins.min[0] >> ins.min[1] >> ins.min[2] >> ins.max[0] >> ins.max[1] >>
+            ins.max[2] >> ins.unk1 >> ins.unk2;
+        if (ins.unk2 != -1) {
+            return u"Instance %1 has bad unk2 %2"_qs.arg(i).arg(ins.unk2);
         }
+        instances.append(ins);
     }
-    qDebug() << "Read" << instanceCount << "instances.";
+    qDebug() << "Read" << instances.count() << "instances.";
 
     // TODO: what are all theses lists and groups of indexes for, they all seem
     //       to be valid indexes for the list of instances/matrices
-
     quint32 idx1Count, idx2Count, idx3Count, idx4Count;
     stream >> idx1Count >> idx2Count >> idx3Count >> idx4Count;
-    if (stream.atEnd()) {
-        qWarning() << "EOF reach before idx1!";
-        return;
+    Group idx1, idx2, idx3, idx4;
+    quint32 v;
+    for (quint32 i = 0; i < idx1Count; ++i) {
+        stream >> v;
+        idx1.append(v);
     }
-    stream.skipRawData(idx1Count * 4);
-    if (stream.atEnd()) {
-        qWarning() << "EOF reach before idx2!";
-        return;
+    qDebug() << "Read" << idx1.count() << "idx1.";
+    for (quint32 i = 0; i < idx2Count; ++i) {
+        stream >> v;
+        idx2.append(v);
     }
-    stream.skipRawData(idx2Count * 4);
-    if (stream.atEnd()) {
-        qWarning() << "EOF reach before idx3!";
-        return;
+    qDebug() << "Read" << idx2.count() << "idx2.";
+    for (quint32 i = 0; i < idx3Count; ++i) {
+        stream >> v;
+        idx3.append(v);
     }
-    stream.skipRawData(idx3Count * 4);
-    if (stream.atEnd()) {
-        qWarning() << "EOF reach before idx4!";
-        return;
+    qDebug() << "Read" << idx3.count() << "idx3.";
+    for (quint32 i = 0; i < idx4Count; ++i) {
+        stream >> v;
+        idx4.append(v);
     }
-    stream.skipRawData(idx4Count * 4);
-    qDebug() << "Skipped" << idx1Count << "indexes.";
-    qDebug() << "Skipped" << idx2Count << "indexes.";
-    qDebug() << "Skipped" << idx3Count << "indexes.";
-    qDebug() << "Skipped" << idx4Count << "indexes.";
+    qDebug() << "Read" << idx4.count() << "idx4.";
 
     if (stream.atEnd()) {
-        qWarning() << "EOF reach before g1!";
-        return;
+        return u"EOF reached before g1!"_qs;
     }
     quint32 g1Count;
     stream >> g1Count;
+    QList<LabeledGroup> g1;
     for (quint32 i = 0; i < g1Count; ++i) {
-        stream.skipRawData(4);
-        quint32 g1aCount;
-        stream >> g1aCount;
-        stream.skipRawData(g1aCount * 4);
+        LabeledGroup g;
+        stream >> g.first;
+        quint32 gCount;
+        stream >> gCount;
+        for (quint32 gi = 0; gi < gCount; ++gi) {
+            stream >> v;
+            g.second.append(v);
+        }
+        g1.append(g);
     }
-    qDebug() << "Skipped" << g1Count << "groups.";
+    qDebug() << "Read" << g1.count() << "labeled groups.";
 
     if (stream.atEnd()) {
-        qWarning() << "EOF reach before g2!";
-        return;
+        return u"EOF reached before g2!"_qs;
     }
     quint32 g2Count;
     stream >> g2Count;
+    QList<Group> g2;
     for (quint32 i = 0; i < g2Count; ++i) {
-        quint32 g2aCount;
-        stream >> g2aCount;
-        stream.skipRawData(g2aCount * 4);
+        Group g;
+        quint32 gCount;
+        stream >> gCount;
+        for (quint32 gi = 0; gi < gCount; ++gi) {
+            stream >> v;
+            g.append(v);
+        }
+        g2.append(g);
     }
-    qDebug() << "Skipped" << g2Count << "groups.";
+    qDebug() << "Read" << g2.count() << "groups.";
 
     if (stream.atEnd()) {
-        qWarning() << "EOF reach before idx5!";
-        return;
+        return u"EOF reached before idx5!"_qs;
     }
     quint32 idx5Count;
     stream >> idx5Count;
-    stream.skipRawData(idx5Count * 4);
-    qDebug() << "Skipped" << idx5Count << "indexes.";
+    Group idx5;
+    for (quint32 i = 0; i < idx5Count; ++i) {
+        stream >> v;
+        idx5.append(v);
+    }
+    qDebug() << "Read" << idx5.count() << "indexes.";
+
+    for (auto &o : objects) {
+        for (auto i = o.indexStart; i < o.indexEnd; ++i) {
+            o.matrices.append(matrices[i]);
+            o.instances.append(instances[i]);
+        }
+    }
+    return {};
 }
 
 } // namespace bwm
