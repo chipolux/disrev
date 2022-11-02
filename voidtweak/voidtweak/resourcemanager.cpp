@@ -27,6 +27,14 @@ void ResourceManager::loadIndexes()
         entryCount += c->entries.count();
     }
     qDebug() << "Finished loading...";
+    // for (const auto c : m_containers) {
+    //     for (const auto e : c->entries) {
+    //         if (e->dstSuffix() == u"bwm"_qs) {
+    //             qInfo() << "Loading" << e->dstFileName();
+    //             loadBwm(e);
+    //         }
+    //     }
+    // }
     emit indexesLoaded(m_containers.count(), entryCount);
     emit statusChanged(false, {});
 }
@@ -310,6 +318,24 @@ void ResourceManager::loadBwm(const QPointer<Entry> ref)
     } else {
         emit statusChanged(false, error);
     }
+}
+
+void ResourceManager::saveObject(const QPointer<Entry> ref, bwm::PODObject obj)
+{
+    emit statusChanged(true, {});
+    QByteArray data;
+    if (!extract(ref, data)) {
+        return;
+    }
+    const QString error = bwm::inject(obj, &data);
+    if (!error.isEmpty()) {
+        emit statusChanged(false, error);
+        return;
+    }
+    if (!insert(ref, data)) {
+        return;
+    }
+    emit statusChanged(false, {});
 }
 
 const Container *ResourceManager::container(const QPointer<Entry> ref)

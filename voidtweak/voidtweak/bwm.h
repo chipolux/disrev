@@ -89,8 +89,10 @@
  */
 
 #include <QList>
+#include <QObject>
 #include <QString>
 #include <QtGlobal>
+#include <QtQml>
 
 namespace bwm
 {
@@ -150,7 +152,142 @@ struct PODObject {
 };
 QDebug operator<<(QDebug d, const PODObject &m);
 
+class Matrix : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Backend only.")
+
+    Q_PROPERTY(qint64 offset READ offset CONSTANT)
+    Q_PROPERTY(float x1 READ x1 WRITE setX1 NOTIFY dataChanged)
+    Q_PROPERTY(float x2 READ x2 WRITE setX2 NOTIFY dataChanged)
+    Q_PROPERTY(float x3 READ x3 WRITE setX3 NOTIFY dataChanged)
+    Q_PROPERTY(float x4 READ x4 WRITE setX4 NOTIFY dataChanged)
+    Q_PROPERTY(float y1 READ y1 WRITE setY1 NOTIFY dataChanged)
+    Q_PROPERTY(float y2 READ y2 WRITE setY2 NOTIFY dataChanged)
+    Q_PROPERTY(float y3 READ y3 WRITE setY3 NOTIFY dataChanged)
+    Q_PROPERTY(float y4 READ y4 WRITE setY4 NOTIFY dataChanged)
+    Q_PROPERTY(float z1 READ z1 WRITE setZ1 NOTIFY dataChanged)
+    Q_PROPERTY(float z2 READ z2 WRITE setZ2 NOTIFY dataChanged)
+    Q_PROPERTY(float z3 READ z3 WRITE setZ3 NOTIFY dataChanged)
+    Q_PROPERTY(float z4 READ z4 WRITE setZ4 NOTIFY dataChanged)
+
+  public:
+    explicit Matrix(const PODMatrix &data, QObject *parent);
+    PODMatrix pod() const { return m_data; }
+    const qint64 &offset() const { return m_data.offset; }
+    const float &x1() const { return m_data.values[0]; }
+    const float &x2() const { return m_data.values[1]; }
+    const float &x3() const { return m_data.values[2]; }
+    const float &x4() const { return m_data.values[3]; }
+    const float &y1() const { return m_data.values[4]; }
+    const float &y2() const { return m_data.values[5]; }
+    const float &y3() const { return m_data.values[6]; }
+    const float &y4() const { return m_data.values[7]; }
+    const float &z1() const { return m_data.values[8]; }
+    const float &z2() const { return m_data.values[9]; }
+    const float &z3() const { return m_data.values[10]; }
+    const float &z4() const { return m_data.values[11]; }
+    void setX1(const float &v);
+    void setX2(const float &v);
+    void setX3(const float &v);
+    void setX4(const float &v);
+    void setY1(const float &v);
+    void setY2(const float &v);
+    void setY3(const float &v);
+    void setY4(const float &v);
+    void setZ1(const float &v);
+    void setZ2(const float &v);
+    void setZ3(const float &v);
+    void setZ4(const float &v);
+
+  signals:
+    void dataChanged();
+
+  private:
+    PODMatrix m_data;
+};
+
+class Instance : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Backend only.")
+
+    Q_PROPERTY(qint64 offset READ offset CONSTANT)
+    Q_PROPERTY(float minX READ minX WRITE setMinX NOTIFY dataChanged)
+    Q_PROPERTY(float minY READ minY WRITE setMinY NOTIFY dataChanged)
+    Q_PROPERTY(float minZ READ minZ WRITE setMinZ NOTIFY dataChanged)
+    Q_PROPERTY(float maxX READ maxX WRITE setMaxX NOTIFY dataChanged)
+    Q_PROPERTY(float maxY READ maxY WRITE setMaxY NOTIFY dataChanged)
+    Q_PROPERTY(float maxZ READ maxZ WRITE setMaxZ NOTIFY dataChanged)
+    Q_PROPERTY(quint32 unk1 READ unk1 CONSTANT)
+    Q_PROPERTY(qint16 unk2 READ unk2 CONSTANT)
+
+  public:
+    explicit Instance(const PODInstance &data, QObject *parent);
+    PODInstance pod() const { return m_data; }
+    const qint64 &offset() const { return m_data.offset; }
+    const float &minX() const { return m_data.min[0]; }
+    const float &minY() const { return m_data.min[1]; }
+    const float &minZ() const { return m_data.min[2]; }
+    const float &maxX() const { return m_data.max[0]; }
+    const float &maxY() const { return m_data.max[1]; }
+    const float &maxZ() const { return m_data.max[2]; }
+    const quint32 &unk1() const { return m_data.unk1; }
+    const qint16 &unk2() const { return m_data.unk2; }
+    void setMinX(const float &v);
+    void setMinY(const float &v);
+    void setMinZ(const float &v);
+    void setMaxX(const float &v);
+    void setMaxY(const float &v);
+    void setMaxZ(const float &v);
+
+  signals:
+    void dataChanged();
+
+  private:
+    PODInstance m_data;
+};
+
+class Object : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Backend only.")
+
+    Q_PROPERTY(qint64 offset READ offset CONSTANT)
+    Q_PROPERTY(quint32 indexStart READ indexStart CONSTANT)
+    Q_PROPERTY(quint32 indexEnd READ indexEnd CONSTANT)
+    Q_PROPERTY(quint32 meshIndex READ meshIndex CONSTANT)
+    Q_PROPERTY(quint8 isFlipped READ isFlipped CONSTANT)
+    Q_PROPERTY(QString materialPath READ materialPath CONSTANT)
+    Q_PROPERTY(quint32 lod READ lod CONSTANT)
+    Q_PROPERTY(QList<Matrix *> matrices READ matrices CONSTANT)
+    Q_PROPERTY(const QList<Instance *> instances READ instances CONSTANT)
+
+  public:
+    explicit Object(const PODObject &data, QObject *parent);
+    PODObject pod();
+    const qint64 &offset() const { return m_data.offset; }
+    const quint32 &indexStart() const { return m_data.indexStart; }
+    const quint32 &indexEnd() const { return m_data.indexEnd; }
+    const quint32 &meshIndex() const { return m_data.meshIndex; }
+    const quint8 &isFlipped() const { return m_data.isFlipped; }
+    const QString &materialPath() const { return m_data.materialPath; }
+    const quint32 &lod() const { return m_data.lod; }
+    const QList<Matrix *> &matrices() const { return m_matrices; }
+    const QList<Instance *> &instances() const { return m_instances; }
+
+  private:
+    PODObject m_data;
+    QList<Matrix *> m_matrices;
+    QList<Instance *> m_instances;
+};
+
 QString parse(const QByteArray &input, QList<PODObject> &objects);
+
+QString inject(const PODObject &obj, QByteArray *output);
 
 } // namespace bwm
 

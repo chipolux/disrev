@@ -39,6 +39,9 @@ Item {
                                             }
                                         })
                                     })
+            if (!!control.entry ? control.entry.isKiscule : false) {
+                return
+            }
             for (var i = 0; i < control.entry.entries.length; i++) {
                 var obj = comp.createObject(entriesColumn, {
                                                 "x": 20,

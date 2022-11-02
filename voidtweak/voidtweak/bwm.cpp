@@ -34,6 +34,65 @@ QDebug operator<<(QDebug d, const PODInstance &i)
     return d;
 }
 
+Matrix::Matrix(const PODMatrix &data, QObject *parent)
+    : QObject(parent)
+    , m_data(data)
+{
+}
+// clang-format off
+void Matrix::setX1(const float &v) {if (v != m_data.values[ 0]) {m_data.values[ 0] = v; emit dataChanged();}}
+void Matrix::setX2(const float &v) {if (v != m_data.values[ 1]) {m_data.values[ 1] = v; emit dataChanged();}}
+void Matrix::setX3(const float &v) {if (v != m_data.values[ 2]) {m_data.values[ 2] = v; emit dataChanged();}}
+void Matrix::setX4(const float &v) {if (v != m_data.values[ 3]) {m_data.values[ 3] = v; emit dataChanged();}}
+void Matrix::setY1(const float &v) {if (v != m_data.values[ 4]) {m_data.values[ 4] = v; emit dataChanged();}}
+void Matrix::setY2(const float &v) {if (v != m_data.values[ 5]) {m_data.values[ 5] = v; emit dataChanged();}}
+void Matrix::setY3(const float &v) {if (v != m_data.values[ 6]) {m_data.values[ 6] = v; emit dataChanged();}}
+void Matrix::setY4(const float &v) {if (v != m_data.values[ 7]) {m_data.values[ 7] = v; emit dataChanged();}}
+void Matrix::setZ1(const float &v) {if (v != m_data.values[ 8]) {m_data.values[ 8] = v; emit dataChanged();}}
+void Matrix::setZ2(const float &v) {if (v != m_data.values[ 9]) {m_data.values[ 9] = v; emit dataChanged();}}
+void Matrix::setZ3(const float &v) {if (v != m_data.values[10]) {m_data.values[10] = v; emit dataChanged();}}
+void Matrix::setZ4(const float &v) {if (v != m_data.values[11]) {m_data.values[11] = v; emit dataChanged();}}
+// clang-format on
+
+Instance::Instance(const PODInstance &data, QObject *parent)
+    : QObject(parent)
+    , m_data(data)
+{
+}
+// clang-format off
+void Instance::setMinX(const float &v) {if (v != m_data.min[0]) {m_data.min[0] = v; emit dataChanged();}}
+void Instance::setMinY(const float &v) {if (v != m_data.min[1]) {m_data.min[1] = v; emit dataChanged();}}
+void Instance::setMinZ(const float &v) {if (v != m_data.min[2]) {m_data.min[2] = v; emit dataChanged();}}
+void Instance::setMaxX(const float &v) {if (v != m_data.max[0]) {m_data.max[0] = v; emit dataChanged();}}
+void Instance::setMaxY(const float &v) {if (v != m_data.max[1]) {m_data.max[1] = v; emit dataChanged();}}
+void Instance::setMaxZ(const float &v) {if (v != m_data.max[2]) {m_data.max[2] = v; emit dataChanged();}}
+// clang-format on
+
+Object::Object(const PODObject &data, QObject *parent)
+    : QObject(parent)
+    , m_data(data)
+{
+    for (const auto &m : m_data.matrices) {
+        m_matrices.append(new Matrix(m, this));
+    }
+    for (const auto &i : m_data.instances) {
+        m_instances.append(new Instance(i, this));
+    }
+}
+
+PODObject Object::pod()
+{
+    m_data.matrices.clear();
+    for (const auto m : m_matrices) {
+        m_data.matrices.append(m->pod());
+    }
+    m_data.instances.clear();
+    for (const auto i : m_instances) {
+        m_data.instances.append(i->pod());
+    }
+    return m_data;
+}
+
 QString parse(const QByteArray &input, QList<PODObject> &objects)
 {
     if (input.first(4) != "BWM1") {
@@ -83,11 +142,16 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
     }
     qDebug() << "Read" << matrices.count() << "matrices.";
 
+    // there is a section size value here, but no BWM file in Dishonored 2 has
+    // any data in this section.
     quint32 vuSize;
     stream >> vuSize;
     auto vuOffset = stream.device()->pos();
     stream.skipRawData(vuSize);
-    qDebug() << "Skipped" << vuSize << "bytes of unknown vertex data at" << Qt::hex << vuOffset;
+    if (vuSize) {
+        qWarning() << "Skipped" << vuSize << "bytes of unknown vertex data at" << Qt::hex
+                   << vuOffset;
+    }
 
     quint32 meshCount;
     stream >> meshCount;
@@ -109,6 +173,7 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
 
     quint32 objectCount;
     stream >> objectCount;
+    QMap<quint32, PODObject *> idxToObj;
     for (quint32 i = 0; i < objectCount; ++i) {
         PODObject o;
         o.offset = stream.device()->pos();
@@ -120,6 +185,9 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
         delete[] str;
         stream >> o.lod;
         objects.append(o);
+        for (quint32 ii = o.indexStart; ii < o.indexEnd; ++ii) {
+            idxToObj[ii] = &o;
+        }
     }
     qDebug() << "Read" << objects.count() << "objects.";
 
@@ -187,8 +255,11 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
     if (stream.atEnd()) {
         return u"EOF reached before g2!"_qs;
     }
+    // there is always at least 1 of these groups, often far more, they can be
+    // empty, but there are never any duplicate indexes
     quint32 g2Count;
     stream >> g2Count;
+    int emptyCount = 0;
     QList<Group> g2;
     for (quint32 i = 0; i < g2Count; ++i) {
         Group g;
@@ -198,9 +269,13 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
             stream >> v;
             g.append(v);
         }
+        if (g.count() == 0) {
+            emptyCount++;
+        }
         g2.append(g);
     }
     qDebug() << "Read" << g2.count() << "groups.";
+    qDebug() << "  " << emptyCount << "empty groups.";
 
     if (stream.atEnd()) {
         return u"EOF reached before idx5!"_qs;
@@ -219,6 +294,28 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
             o.matrices.append(matrices[i]);
             o.instances.append(instances[i]);
         }
+    }
+    return {};
+}
+
+QString inject(const PODObject &obj, QByteArray *output)
+{
+    if (output->first(4) != "BWM1") {
+        return u"Bad magic:"_qs.arg(output->first(4));
+    }
+    QDataStream stream(output, QIODevice::ReadWrite);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    for (const auto &m : obj.matrices) {
+        stream.device()->seek(m.offset);
+        stream << m.values[0] << m.values[1] << m.values[2] << m.values[3] << m.values[4]
+               << m.values[5] << m.values[6] << m.values[7] << m.values[8] << m.values[9]
+               << m.values[10] << m.values[11];
+    }
+    for (const auto &i : obj.instances) {
+        stream.device()->seek(i.offset);
+        stream << i.min[0] << i.min[1] << i.min[2] << i.max[0] << i.max[1] << i.max[2] << i.unk1
+               << i.unk2;
     }
     return {};
 }

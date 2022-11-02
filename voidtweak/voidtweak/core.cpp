@@ -14,8 +14,8 @@ Core::Core(QObject *parent)
     , m_rm(new ResourceManager)
     , m_rmThread(new QThread(this))
     , m_searchResultDebounce(new QTimer(this))
-    , m_entities()
     , m_entry(nullptr)
+    , m_entities()
 {
     m_rm->moveToThread(m_rmThread);
     connect(m_rmThread, &QThread::finished, m_rm, &QObject::deleteLater);
@@ -28,6 +28,7 @@ Core::Core(QObject *parent)
     connect(this, &Core::loadEntities, m_rm, &ResourceManager::loadEntities);
     connect(this, &Core::exportAllEntries, m_rm, &ResourceManager::exportAllEntries);
     connect(this, &Core::loadBwm, m_rm, &ResourceManager::loadBwm);
+    connect(this, &Core::startSavingObject, m_rm, &ResourceManager::saveObject);
     connect(m_rm, &ResourceManager::statusChanged, this, &Core::rmStatusChanged);
     connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);
@@ -171,6 +172,7 @@ void Core::clear()
         emit resultsChanged();
         emit sortOrderChanged();
         clearEntities();
+        clearObjects();
     }
 }
 
@@ -217,7 +219,17 @@ void Core::entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities
     emit entitiesChanged();
 }
 
-void Core::bwmLoaded(const QPointer<Entry>, QList<bwm::PODObject>) {}
+void Core::bwmLoaded(const QPointer<Entry> ref, QList<bwm::PODObject> objects)
+{
+    qDebug() << "Building full objects...";
+    qDeleteAllLater(m_objects);
+    m_entry = m_results.at(m_results.indexOf(ref));
+    for (const auto &o : objects) {
+        m_objects.append(new bwm::Object(o, this));
+    }
+    qInfo() << "Built" << m_objects.count() << "for" << ref;
+    emit objectsChanged();
+}
 
 void Core::saveEntities()
 {
@@ -240,5 +252,19 @@ void Core::deleteEntities(const QList<decl::Entity *> &entities)
     }
     if (changed) {
         emit entitiesChanged();
+    }
+}
+
+void Core::clearObjects()
+{
+    qDeleteAllLater(m_objects);
+    m_entry = nullptr;
+    emit objectsChanged();
+}
+
+void Core::saveObject(bwm::Object *obj)
+{
+    if (obj) {
+        emit startSavingObject(m_entry, obj->pod());
     }
 }

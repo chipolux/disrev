@@ -12,7 +12,15 @@ ApplicationWindow {
     color: "#333"
 
     Loader {
-        source: !!core.entities.length ? "EntitiesListPage.qml" : "EntrySearchPage.qml"
+        source: {
+            if (!!core.entities.length) {
+                return "EntitiesListPage.qml"
+            } else if (!!core.objects.length) {
+                return "ObjectsListPage.qml"
+            } else {
+                return "EntrySearchPage.qml"
+            }
+        }
         anchors.fill: parent
     }
 

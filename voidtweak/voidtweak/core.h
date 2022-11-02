@@ -21,6 +21,7 @@ class Core : public QObject
     Q_PROPERTY(int resultCount READ resultCount NOTIFY resultsChanged)
     Q_PROPERTY(QList<Entry *> results READ results NOTIFY resultsChanged)
     Q_PROPERTY(QList<decl::Entity *> entities READ entities NOTIFY entitiesChanged)
+    Q_PROPERTY(QList<bwm::Object *> objects READ objects NOTIFY objectsChanged)
 
   public:
     enum SortOrder {
@@ -44,6 +45,7 @@ class Core : public QObject
     const int &resultCount() const { return m_resultCount; }
     const QList<Entry *> &results() const { return m_results; }
     const QList<decl::Entity *> &entities() const { return m_entities; }
+    const QList<bwm::Object *> &objects() const { return m_objects; }
 
   signals:
     void startLoadingIndexes();
@@ -58,6 +60,8 @@ class Core : public QObject
     void entitiesChanged();
     void exportAllEntries(QUrl path);
     void loadBwm(Entry *entry);
+    void objectsChanged();
+    void startSavingObject(Entry *entry, bwm::PODObject obj);
 
   public slots:
     void sortResults(const Core::SortOrder &order);
@@ -67,6 +71,8 @@ class Core : public QObject
     void clearEntities();
     void saveEntities();
     void deleteEntities(const QList<decl::Entity *> &entities);
+    void clearObjects();
+    void saveObject(bwm::Object *obj);
 
   private slots:
     void rmStatusChanged(bool busy, QString error);
@@ -90,8 +96,9 @@ class Core : public QObject
     QThread *m_rmThread;
     QTimer *m_searchResultDebounce;
 
-    QList<decl::Entity *> m_entities;
     Entry *m_entry;
+    QList<decl::Entity *> m_entities;
+    QList<bwm::Object *> m_objects;
 };
 
 #endif // CORE_H

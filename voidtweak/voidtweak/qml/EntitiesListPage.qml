@@ -71,8 +71,8 @@ Item {
     EntityEditPage {
         id: entityEditPage
         width: parent.width * 0.7
-        entity: page.indexes.length === 1
-                && core.entities.length > page.indexes[0] ? core.entities[page.indexes[0]] : null
+        entity: page.indexes.length === 1 && entitiesList.model.length
+                > page.indexes[0] ? entitiesList.model[page.indexes[0]] : null
         anchors.top: entitiesList.top
         anchors.bottom: entitiesList.bottom
         anchors.right: parent.right
