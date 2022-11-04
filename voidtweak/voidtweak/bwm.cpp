@@ -24,13 +24,15 @@ QDebug operator<<(QDebug d, const PODObject &o)
 {
     d.nospace() << "Object(offset=" << o.offset << ", indexStart=" << o.indexStart
                 << ", indexEnd=" << o.indexEnd << ", mesh=" << o.meshIndex << ", lod=" << o.lod
-                << ", mat=" << o.materialPath << ")";
+                << ", mat=" << o.materialPath.split('/').last() << ")";
     return d;
 }
 
 QDebug operator<<(QDebug d, const PODInstance &i)
 {
-    d.nospace() << "Instance(offset=" << i.offset << ", min=" << i.min << ", max=" << i.max << ")";
+    d.nospace() << "Instance(offset=" << i.offset;
+    d.nospace() << ", min=(" << i.min[0] << ", " << i.min[1] << ", " << i.min[2] << ")";
+    d.nospace() << ", max=(" << i.max[0] << ", " << i.max[1] << ", " << i.max[2] << "))";
     return d;
 }
 
