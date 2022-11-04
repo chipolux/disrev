@@ -175,7 +175,7 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
 
     quint32 objectCount;
     stream >> objectCount;
-    QMap<quint32, PODObject *> idxToObj;
+    QMap<quint32, quint32> idxToObj;
     for (quint32 i = 0; i < objectCount; ++i) {
         PODObject o;
         o.offset = stream.device()->pos();
@@ -188,7 +188,7 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
         stream >> o.lod;
         objects.append(o);
         for (quint32 ii = o.indexStart; ii < o.indexEnd; ++ii) {
-            idxToObj[ii] = &o;
+            idxToObj[ii] = i;
         }
     }
     qDebug() << "Read" << objects.count() << "objects.";
