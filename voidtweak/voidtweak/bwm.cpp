@@ -212,28 +212,32 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
     //       to be valid indexes for the list of instances/matrices
     quint32 idx1Count, idx2Count, idx3Count, idx4Count;
     stream >> idx1Count >> idx2Count >> idx3Count >> idx4Count;
-    Group idx1, idx2, idx3, idx4;
+    Group idx1, idx2, idx3;
     quint32 v;
+
+    // NOTE: appears to be material.options.rendering/darkVisionLayer = 1
     for (quint32 i = 0; i < idx1Count; ++i) {
         stream >> v;
         idx1.append(v);
     }
-    qDebug() << "Read" << idx1.count() << "idx1.";
+
+    // NOTE: appears to be material.options.rendering/darkVisionLayer = 2
     for (quint32 i = 0; i < idx2Count; ++i) {
         stream >> v;
         idx2.append(v);
     }
-    qDebug() << "Read" << idx2.count() << "idx2.";
+
+    // NOTE: appears to be material.options.rendering/darkVisionLayer = 3
     for (quint32 i = 0; i < idx3Count; ++i) {
         stream >> v;
         idx3.append(v);
     }
-    qDebug() << "Read" << idx3.count() << "idx3.";
-    for (quint32 i = 0; i < idx4Count; ++i) {
-        stream >> v;
-        idx4.append(v);
+
+    // NOTE: never used, but i bet it is material.options.rendering/darkVisionLayer = 4
+    stream.skipRawData(idx4Count * 4);
+    if (idx4Count) {
+        qWarning() << "Skipped" << idx4Count << "indexes in idx4!";
     }
-    qDebug() << "Read" << idx4.count() << "idx4.";
 
     if (stream.atEnd()) {
         return u"EOF reached before g1!"_qs;
