@@ -6,6 +6,7 @@
 
 #include "container.h"
 #include "entry.h"
+#include "steam.h"
 #include "zutils.h"
 
 ResourceManager::ResourceManager(QObject *parent)
@@ -41,10 +42,14 @@ void ResourceManager::loadIndexes()
 
 bool ResourceManager::loadMasterIndex()
 {
-    QDir dir(D2Dir);
+    const QString d2Dir = steam::d2Dir();
+    if (d2Dir.isEmpty()) {
+        emit statusChanged(false, u"Failed to find Dishonored 2 install directory!"_qs);
+        return false;
+    }
+    QDir dir(d2Dir);
     if (!dir.exists(u"master.index"_qs)) {
-        qWarning() << "No master.index found!";
-        emit statusChanged(false, u"No master.index found!"_qs);
+        emit statusChanged(false, u"No master.index found in %1"_qs.arg(dir.absolutePath()));
         return false;
     }
     QFile f(dir.absoluteFilePath(u"master.index"_qs));

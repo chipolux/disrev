@@ -16,8 +16,6 @@ class ResourceManager : public QObject
     Q_OBJECT
 
   public:
-    inline static QString D2Dir{u"C:\\Steam\\steamapps\\common\\Dishonored2\\base"_qs};
-
     explicit ResourceManager(QObject *parent = nullptr);
 
   signals:

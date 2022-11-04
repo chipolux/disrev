@@ -3,12 +3,18 @@
 
 #include <QString>
 
+#define DIS2_APPID u"403640"_qs
+
 namespace steam
 {
 
 QString steamDir();
 
-QString dis2Dir();
+QString d2Dir();
+
+QVariantMap loadLibraryFolders();
+
+QString parse(const QByteArray &data, QVariantMap &output);
 
 } // namespace steam
 
