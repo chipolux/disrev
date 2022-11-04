@@ -19,6 +19,7 @@ set(QT_MODULES
 )
 find_package(Qt6 COMPONENTS ${QT_MODULES} REQUIRED)
 list(TRANSFORM QT_MODULES PREPEND Qt${QT_VERSION_MAJOR}::)
+find_package(ZLIB)
 
 set(PROJECT_SOURCES
     bwm.cpp
@@ -36,6 +37,8 @@ set(PROJECT_SOURCES
     qtutils.h
     resourcemanager.cpp
     resourcemanager.h
+    steam.cpp
+    steam.h
     zutils.cpp
     zutils.h
 )
@@ -53,7 +56,7 @@ set(PROJECT_RESOURCES
 file(GLOB_RECURSE PROJECT_QMLFILES RELATIVE ${PROJECT_SOURCE_DIR} CONFIGURE_DEPENDS "*.qml")
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_MODULES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${QT_MODULES} ZLIB::ZLIB)
 qt_add_qml_module(${PROJECT_NAME}
     URI ${PROJECT_NAME}
     VERSION 1.0
@@ -68,7 +71,7 @@ qt_import_qml_plugins(${PROJECT_NAME})
 configure_file(config.h.in config.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# warn and error for everything
+# warn and error for (almost) everything
 if(NOT EMSCRIPTEN)
     # C4702 = Unreachable Code, Qt 6.3.2 has an annoying instance of this...
     # C4127 = Conditional is not constant, qiterable is the culprit here
@@ -79,6 +82,7 @@ if(NOT EMSCRIPTEN)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
+    MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 

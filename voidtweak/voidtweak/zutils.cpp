@@ -1,7 +1,13 @@
 #include "zutils.h"
 
 #include <QDebug>
+
+#ifdef Q_OS_WINDOWS
 #include <QtZlib/zlib.h>
+#else
+#include <zlib.h>
+#define z_Bytef Bytef
+#endif
 
 #define ZLIB_INFBUF 0x4000
 #define ZLIB_DEFBUF 0x4000
