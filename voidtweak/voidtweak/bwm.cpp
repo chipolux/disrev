@@ -286,6 +286,9 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
     if (stream.atEnd()) {
         return u"EOF reached before idx5!"_qs;
     }
+
+    // TODO: used rarely, not much in common with members, all have m_PhysicsMaterial
+    //       set to env.<something> (metal, stone, dirt...)
     quint32 idx5Count;
     stream >> idx5Count;
     Group idx5;
@@ -293,7 +296,6 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
         stream >> v;
         idx5.append(v);
     }
-    qDebug() << "Read" << idx5.count() << "indexes.";
 
     for (auto &o : objects) {
         for (auto i = o.indexStart; i < o.indexEnd; ++i) {
