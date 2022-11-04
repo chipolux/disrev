@@ -209,26 +209,34 @@ void Core::extractResult(const QPointer<Entry>, QByteArray) {}
 
 void Core::entitiesLoaded(const QPointer<Entry> ref, QList<decl::Scope> entities)
 {
-    qInfo() << "Building full entities...";
-    qDeleteAllLater(m_entities);
-    m_entry = m_results.at(m_results.indexOf(ref));
-    for (const auto &scope : entities) {
-        m_entities.append(new decl::Entity(scope, this));
+    if (m_results.contains(ref)) {
+        qDebug() << "Building full entities...";
+        qDeleteAllLater(m_entities);
+        m_entry = m_results.at(m_results.indexOf(ref));
+        for (const auto &scope : entities) {
+            m_entities.append(new decl::Entity(scope, this));
+        }
+        qInfo() << "Built" << m_entities.count() << "for" << ref;
+        emit entitiesChanged();
+    } else {
+        qWarning() << "No matching entry in results:" << ref;
     }
-    qInfo() << "Built entities:" << m_entities.count();
-    emit entitiesChanged();
 }
 
 void Core::bwmLoaded(const QPointer<Entry> ref, QList<bwm::PODObject> objects)
 {
-    qDebug() << "Building full objects...";
-    qDeleteAllLater(m_objects);
-    m_entry = m_results.at(m_results.indexOf(ref));
-    for (const auto &o : objects) {
-        m_objects.append(new bwm::Object(o, this));
+    if (m_results.contains(ref)) {
+        qDebug() << "Building full objects...";
+        qDeleteAllLater(m_objects);
+        m_entry = m_results.at(m_results.indexOf(ref));
+        for (const auto &o : objects) {
+            m_objects.append(new bwm::Object(o, this));
+        }
+        qInfo() << "Built" << m_objects.count() << "for" << ref;
+        emit objectsChanged();
+    } else {
+        qWarning() << "No matching entry in results:" << ref;
     }
-    qInfo() << "Built" << m_objects.count() << "for" << ref;
-    emit objectsChanged();
 }
 
 void Core::saveEntities()
