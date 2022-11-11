@@ -83,6 +83,8 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.margins: 5
+
+                onClicked: core.saveObjects()
             }
 
             Menu {

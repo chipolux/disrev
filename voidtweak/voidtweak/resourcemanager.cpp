@@ -343,6 +343,24 @@ void ResourceManager::saveObject(const QPointer<Entry> ref, bwm::PODObject obj)
     emit statusChanged(false, {});
 }
 
+void ResourceManager::saveObjects(const QPointer<Entry> ref, QList<bwm::PODObject> objects)
+{
+    emit statusChanged(true, {});
+    QByteArray data;
+    if (!extract(ref, data)) {
+        return;
+    }
+    const QString error = bwm::inject(objects, &data);
+    if (!error.isEmpty()) {
+        emit statusChanged(false, error);
+        return;
+    }
+    if (!insert(ref, data)) {
+        return;
+    }
+    emit statusChanged(false, {});
+}
+
 const Container *ResourceManager::container(const QPointer<Entry> ref)
 {
     Container *c = nullptr;

@@ -62,6 +62,7 @@ class Core : public QObject
     void loadBwm(Entry *entry);
     void objectsChanged();
     void startSavingObject(Entry *entry, bwm::PODObject obj);
+    void startSavingObjects(Entry *entry, QList<bwm::PODObject> objects);
 
   public slots:
     void sortResults(const Core::SortOrder &order);
@@ -73,6 +74,7 @@ class Core : public QObject
     void deleteEntities(const QList<decl::Entity *> &entities);
     void clearObjects();
     void saveObject(bwm::Object *obj);
+    void saveObjects();
 
   private slots:
     void rmStatusChanged(bool busy, QString error);

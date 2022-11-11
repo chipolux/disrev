@@ -37,6 +37,7 @@ class ResourceManager : public QObject
     void exportAllEntries(QUrl path);
     void loadBwm(const QPointer<Entry> ref);
     void saveObject(const QPointer<Entry> ref, bwm::PODObject obj);
+    void saveObjects(const QPointer<Entry> ref, QList<bwm::PODObject> objects);
 
   private:
     QList<Container *> m_containers;

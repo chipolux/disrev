@@ -306,7 +306,9 @@ QString parse(const QByteArray &input, QList<PODObject> &objects)
     return {};
 }
 
-QString inject(const PODObject &obj, QByteArray *output)
+QString inject(const PODObject &obj, QByteArray *output) { return inject(QList({obj}), output); }
+
+QString inject(const QList<PODObject> &objects, QByteArray *output)
 {
     if (output->first(4) != "BWM1") {
         return u"Bad magic:"_qs.arg(output->first(4));
@@ -314,16 +316,18 @@ QString inject(const PODObject &obj, QByteArray *output)
     QDataStream stream(output, QIODevice::ReadWrite);
     stream.setByteOrder(QDataStream::LittleEndian);
     stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    for (const auto &m : obj.matrices) {
-        stream.device()->seek(m.offset);
-        stream << m.values[0] << m.values[1] << m.values[2] << m.values[3] << m.values[4]
-               << m.values[5] << m.values[6] << m.values[7] << m.values[8] << m.values[9]
-               << m.values[10] << m.values[11];
-    }
-    for (const auto &i : obj.instances) {
-        stream.device()->seek(i.offset);
-        stream << i.min[0] << i.min[1] << i.min[2] << i.max[0] << i.max[1] << i.max[2] << i.unk1
-               << i.unk2;
+    for (const auto &obj : objects) {
+        for (const auto &m : obj.matrices) {
+            stream.device()->seek(m.offset);
+            stream << m.values[0] << m.values[1] << m.values[2] << m.values[3] << m.values[4]
+                   << m.values[5] << m.values[6] << m.values[7] << m.values[8] << m.values[9]
+                   << m.values[10] << m.values[11];
+        }
+        for (const auto &i : obj.instances) {
+            stream.device()->seek(i.offset);
+            stream << i.min[0] << i.min[1] << i.min[2] << i.max[0] << i.max[1] << i.max[2] << i.unk1
+                   << i.unk2;
+        }
     }
     return {};
 }

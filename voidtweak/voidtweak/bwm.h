@@ -289,6 +289,8 @@ QString parse(const QByteArray &input, QList<PODObject> &objects);
 
 QString inject(const PODObject &obj, QByteArray *output);
 
+QString inject(const QList<PODObject> &objects, QByteArray *output);
+
 } // namespace bwm
 
 #endif // BWM_H

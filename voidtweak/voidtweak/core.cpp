@@ -29,6 +29,7 @@ Core::Core(QObject *parent)
     connect(this, &Core::exportAllEntries, m_rm, &ResourceManager::exportAllEntries);
     connect(this, &Core::loadBwm, m_rm, &ResourceManager::loadBwm);
     connect(this, &Core::startSavingObject, m_rm, &ResourceManager::saveObject);
+    connect(this, &Core::startSavingObjects, m_rm, &ResourceManager::saveObjects);
     connect(m_rm, &ResourceManager::statusChanged, this, &Core::rmStatusChanged);
     connect(m_rm, &ResourceManager::indexesLoaded, this, &Core::indexesLoaded);
     connect(m_rm, &ResourceManager::searchResult, this, &Core::searchResult);
@@ -232,7 +233,7 @@ void Core::bwmLoaded(const QPointer<Entry> ref, QList<bwm::PODObject> objects)
         for (const auto &o : objects) {
             m_objects.append(new bwm::Object(o, this));
         }
-        qInfo() << "Built" << m_objects.count() << "for" << ref;
+        qInfo() << "Built" << m_objects.count() << "objects for" << ref;
         emit objectsChanged();
     } else {
         qWarning() << "No matching entry in results:" << ref;
@@ -274,5 +275,16 @@ void Core::saveObject(bwm::Object *obj)
 {
     if (obj) {
         emit startSavingObject(m_entry, obj->pod());
+    }
+}
+
+void Core::saveObjects()
+{
+    if (!m_objects.isEmpty()) {
+        QList<bwm::PODObject> objects;
+        for (const auto obj : m_objects) {
+            objects.append(obj->pod());
+        }
+        emit startSavingObjects(m_entry, objects);
     }
 }
