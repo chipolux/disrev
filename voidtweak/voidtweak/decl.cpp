@@ -53,6 +53,12 @@ void EntityEntry::deleteEntry(decl::EntityEntry *entry)
     }
 }
 
+void EntityEntry::addEntry()
+{
+    m_entries.append(new EntityEntry(Entry(), this));
+    emit entriesChanged(m_entries);
+}
+
 Entity::Entity(const Scope &scope, QObject *parent)
     : QObject(parent)
     , m_entityId()
@@ -94,6 +100,12 @@ void Entity::deleteEntry(decl::EntityEntry *entry)
         m_entries.removeAll(entry);
         emit entriesChanged(m_entries);
     }
+}
+
+void Entity::addEntry()
+{
+    m_entries.append(new EntityEntry(Entry(), this));
+    emit entriesChanged(m_entries);
 }
 
 QString parse(const QByteArray &data, QList<Scope> &entities)

@@ -219,6 +219,17 @@ Item {
                     popup.close()
                 }
             }
+
+            Button {
+                text: "Add Child"
+                Layout.fillWidth: true
+
+                onClicked: {
+                    forceActiveFocus()
+                    popup.entry.addEntry()
+                    popup.close()
+                }
+            }
         }
     }
 }

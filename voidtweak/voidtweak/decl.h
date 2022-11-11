@@ -28,6 +28,7 @@ class EntityEntry : public QObject
 
   public slots:
     void deleteEntry(decl::EntityEntry *entry);
+    void addEntry();
 
   private:
     RW_PROP(QString, key, setKey)
@@ -49,6 +50,7 @@ class Entity : public QObject
 
   public slots:
     void deleteEntry(decl::EntityEntry *entry);
+    void addEntry();
 
   private:
     RW_PROP(QString, entityId, setEntityId)
