@@ -14,11 +14,11 @@ ApplicationWindow {
     Loader {
         source: {
             if (!!core.entities.length) {
-                return "EntitiesListPage.qml"
+                return "EntitiesListPage.qml"  // .entities files edit page
             } else if (!!core.objects.length) {
-                return "ObjectsListPage.qml"
+                return "ObjectsListPage.qml"  // 3d "objects" edit page
             } else {
-                return "EntrySearchPage.qml"
+                return "EntrySearchPage.qml" // main page resource file "entries"
             }
         }
         anchors.fill: parent
