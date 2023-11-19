@@ -183,3 +183,82 @@ I have written a simple parser for them in `entlib.py`.
 
 [See a more detailed description of the file format here.](docs/entities.md)
 </details>
+
+<details>
+<summary><h3>.mapinfo.decl Files</h3></summary>
+
+Each map in the game has a matching `.mapinfo.decl` file. These are plaintext files
+that seem to be the basic configuration for the level.
+
+They control:
+
+* The map debug name.
+* The path to a matching `.map` file.
+    * Doesn't seem to affect anything if we change it...
+* How the loading process should work. (animations, layout, if it should wait at the end)
+* The players initial state. (in menu, etc.)
+
+Same format as the `.entities` files it seems, or close enough the same parser
+will likely work.
+
+Known values for m_initialState (tested in main menu level):
+ARK_GAME_LOGIC_STATE_NONE
+    starts normally
+ARK_GAME_LOGIC_STATE_PAUSE
+    starts you in the pause menu, which also pauses fog/fade in from black, etc.
+ARK_GAME_LOGIC_STATE_INGAME
+    starts normally
+ARK_GAME_LOGIC_STATE_READNOTE
+    shows a black screen
+ARK_GAME_LOGIC_STATE_NOTIFICATION
+    shows black screen with uninitialized HUD and a tiny dot in the center
+ARK_GAME_LOGIC_STATE_MAINMENU
+    shows the main menu
+ARK_GAME_LOGIC_STATE_CINEMATIC
+    loads normally, player locked out of controls, but can look around, no HUD
+ARK_GAME_LOGIC_STATE_POWERWHEEL
+    power wheel is shown but hides because you're not pressing TAB, leaves behind
+    a weird blur that falls off with distance abruptly, just to blur the hands
+    in regular gameplay i suspect
+ARK_GAME_LOGIC_STATE_JOURNAL
+    loads into the journal menu, does leave behind the same blur artifact like
+    the POWERWHEEL state
+ARK_GAME_LOGIC_STATE_BLACKMARKET
+    starts normally (need to test on a level with a black market)
+ARK_GAME_LOGIC_STATE_CONVERSATION
+    shows a black screen
+ARK_GAME_LOGIC_STATE_TUTORIAL
+    starts normally
+ARK_GAME_LOGIC_STATE_RESULTS
+    starts in the end of level results screen, continuing takes you nowhere but
+    a textured blue/black background (need to test on a level with transitions)
+ARK_GAME_LOGIC_STATE_CHARACTER_CHOICE
+    starts normally
+ARK_GAME_LOGIC_STATE_GAMEOVER
+    starts in the game over screen, you can exit, restart, etc. normally.
+ARK_GAME_LOGIC_STATE_DEMO
+    starts normally
+ARK_GAME_LOGIC_STATE_MAP_TRANSITION
+    crashes as soon as the map finished loading
+ARK_GAME_LOGIC_STATE_ANY
+    crashes as soon as the map finished loading
+ARK_GAME_LOGIC_STATE_MAX
+    starts normally
+</details>
+
+<details>
+<summary><h3>physics.cpntplayerphysics.decl File</h3></summary>
+
+There is one of these in the whole game, it contains definitions for the players
+hitbox material and max slope as well as a list of every possible player "shape"
+with the relevant hitbox size, step height, gravity strength, etc.
+
+Those "shapes" or "postures" include things like crouching, wall crouching,
+possessing hounds, fish, blood flys, grappling, etc.
+
+Same format as the `.entities` files it seems, or close enough the same parser
+will likely work.
+
+A handy thing to do here for testing is adjusting the gravity strength for things
+like crouching so you can float or fly up in a semi-freecam way to explore levels.
+</details>
