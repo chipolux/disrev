@@ -44,6 +44,25 @@ void EntityEntry::toByteArray(QByteArray &stream, const int &depth) const
     }
 }
 
+QVariantMap EntityEntry::toMap() const
+{
+    QVariantMap data;
+    if (isLeaf()) {
+        qWarning() << "Tried to convert a leaf to a map:" << m_key << "=" << m_value;
+        return data;
+    }
+
+    for (const auto entry : m_entries) {
+        if (entry->isLeaf()) {
+            data.insert(entry->key(), entry->value());
+        } else {
+            data.insert(entry->key(), entry->toMap());
+        }
+    }
+
+    return data;
+}
+
 void EntityEntry::deleteEntry(decl::EntityEntry *entry)
 {
     if (m_entries.contains(entry)) {

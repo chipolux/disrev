@@ -24,7 +24,9 @@ class EntityEntry : public QObject
 
   public:
     explicit EntityEntry(const Entry &entry, QObject *parent);
+    bool isLeaf() const { return m_entries.isEmpty(); }
     void toByteArray(QByteArray &stream, const int &depth = 0) const;
+    QVariantMap toMap() const;
 
   public slots:
     void deleteEntry(decl::EntityEntry *entry);
