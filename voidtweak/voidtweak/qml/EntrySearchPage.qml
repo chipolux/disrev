@@ -69,42 +69,51 @@ Item {
         anchors.topMargin: -10
     }
 
-    TextField {
-        id: searchInput
-        placeholderText: "Search in source and destination..."
-        selectByMouse: true
-        selectionColor: "orange"
-        enabled: !core.busy
+    RowLayout {
+        id: inputRow
+        spacing: 5
+        anchors.top: parent.top
         anchors.left: parent.left
-        anchors.right: loadIndexesButton.left
-        anchors.top: parent.top
-        anchors.margins: 5
-
-        onAccepted: core.search(text)
-    }
-
-    Button {
-        id: loadIndexesButton
-        height: searchInput.height
-        text: "Load Indexes"
-        enabled: !core.busy
-        anchors.right: exportAllButton.left
-        anchors.top: parent.top
-        anchors.margins: 5
-
-        onClicked: core.loadIndexes()
-    }
-
-    Button {
-        id: exportAllButton
-        height: searchInput.height
-        text: "Export All"
-        enabled: !core.busy && !!core.entryCount
         anchors.right: parent.right
-        anchors.top: parent.top
         anchors.margins: 5
 
-        onClicked: folderDialog.open()
+        TextField {
+            placeholderText: "Search in source and destination..."
+            selectByMouse: true
+            selectionColor: "orange"
+            enabled: !core.busy
+
+            onAccepted: core.search(text)
+
+            Layout.fillWidth: true
+        }
+
+        Button {
+            text: "Load Indexes"
+            enabled: !core.busy
+
+            onClicked: core.loadIndexes()
+
+            Layout.fillHeight: true
+        }
+
+        Button {
+            text: "Export All"
+            enabled: !core.busy && !!core.entryCount
+
+            onClicked: folderDialog.open()
+
+            Layout.fillHeight: true
+        }
+
+        Button {
+            text: "Launch Game"
+            enabled: !core.busy && !!core.entryCount
+
+            onClicked: core.launchGame()
+
+            Layout.fillHeight: true
+        }
     }
 
     Label {
@@ -112,7 +121,7 @@ Item {
         text: `Found ${core.resultCount} results...`
         color: "#DDD"
         anchors.left: parent.left
-        anchors.top: searchInput.bottom
+        anchors.top: inputRow.bottom
         anchors.margins: 5
     }
 
@@ -121,7 +130,7 @@ Item {
         text: `Sort: ${core.sortOrderName}`
         color: "#DDD"
         anchors.right: parent.right
-        anchors.top: searchInput.bottom
+        anchors.top: inputRow.bottom
         anchors.margins: 5
 
         MouseArea {
