@@ -42,7 +42,7 @@ ApplicationWindow {
         opacity: core.busy ? 1.0 : 0.0
         smooth: false
         speed: 1.5
-        source: "qrc:/voidtweak/resources/rune-spinner.gif"
+        source: "/voidtweak/resources/rune-spinner.gif"
         anchors.centerIn: parent
 
         Behavior on opacity {
