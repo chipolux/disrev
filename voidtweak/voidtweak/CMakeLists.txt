@@ -36,6 +36,8 @@ set(PROJECT_SOURCES
     decl.h
     entry.cpp
     entry.h
+    kiscule.cpp
+    kiscule.h
     main.cpp
     qtutils.cpp
     qtutils.h

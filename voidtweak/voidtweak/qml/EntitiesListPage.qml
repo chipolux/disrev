@@ -13,75 +13,99 @@ Item {
     property var indexes: []
     property string filter
 
-    ListView {
-        id: entitiesList
-        model: !page.filter ? core.entities : core.entities.filter(
-                                  e => e.entityId.includes(page.filter))
-        enabled: !core.busy
-        interactive: !entityMenu.visible
-        boundsBehavior: ListView.StopAtBounds
-        anchors.top: filterInput.bottom
+    RowLayout {
+        spacing: 5
         anchors.left: parent.left
-        anchors.right: entityEditPage.left
+        anchors.right: parent.right
+        anchors.top: filterInput.bottom
         anchors.bottom: parent.bottom
         anchors.margins: 5
 
-        delegate: EntityListItem {
-            width: ListView.view.width
-            entity: modelData
-            selected: page.indexes.includes(index)
+        ListView {
+            id: entitiesList
+            model: !page.filter ? core.entities : core.entities.filter(
+                                      e => e.entityId.includes(page.filter))
+            enabled: !core.busy
+            interactive: !entityMenu.visible
+            boundsBehavior: ListView.StopAtBounds
+            visible: !core.script
+            Layout.fillHeight: true
+            Layout.fillWidth: true
 
-            MouseArea {
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                anchors.fill: parent
+            delegate: EntityListItem {
+                width: ListView.view.width
+                entity: modelData
+                selected: page.indexes.includes(index)
 
-                onClicked: function (event) {
-                    var leftButton = event.button === Qt.LeftButton
-                    var rightButton = event.button === Qt.RightButton
-                    var shiftMod = event.modifiers & Qt.ShiftModifier
-                    var ctrlMod = event.modifiers & Qt.ControlModifier
-                    if (index === -1) {
-                        return
-                    } else if (rightButton && page.indexes.includes(index)) {
-                        entityMenu.popup()
-                    } else if (rightButton) {
-                        page.indexes = [index]
-                        entityMenu.popup()
-                    } else if (leftButton && !shiftMod && !ctrlMod) {
-                        page.indexes = [index]
-                    } else if (leftButton && shiftMod) {
-                        var indexes = []
-                        var startIndex = !!page.indexes.length ? page.indexes[0] : index
-                        var direction = index > startIndex ? 1 : -1
-                        for (var i = startIndex; i !== index; i += direction) {
-                            indexes.push(i)
+                MouseArea {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    anchors.fill: parent
+
+                    onClicked: function (event) {
+                        var leftButton = event.button === Qt.LeftButton
+                        var rightButton = event.button === Qt.RightButton
+                        var shiftMod = event.modifiers & Qt.ShiftModifier
+                        var ctrlMod = event.modifiers & Qt.ControlModifier
+                        if (index === -1) {
+                            return
+                        } else if (rightButton
+                                   && page.indexes.includes(index)) {
+                            entityMenu.popup()
+                        } else if (rightButton) {
+                            page.indexes = [index]
+                            entityMenu.popup()
+                        } else if (leftButton && !shiftMod && !ctrlMod) {
+                            page.indexes = [index]
+                        } else if (leftButton && shiftMod) {
+                            var indexes = []
+                            var startIndex = !!page.indexes.length ? page.indexes[0] : index
+                            var direction = index > startIndex ? 1 : -1
+                            for (var i = startIndex; i !== index; i += direction) {
+                                indexes.push(i)
+                            }
+                            indexes.push(index)
+                            page.indexes = indexes
+                        } else if (leftButton && ctrlMod
+                                   && !page.indexes.includes(index)) {
+                            page.indexes.push(index)
+                            page.indexesChanged()
                         }
-                        indexes.push(index)
-                        page.indexes = indexes
-                    } else if (leftButton && ctrlMod
-                               && !page.indexes.includes(index)) {
-                        page.indexes.push(index)
-                        page.indexesChanged()
                     }
+                }
+            }
+        }
+
+        Loader {
+            id: editorLoader
+            sourceComponent: !!core.script ? kisculeEditorComponent : entityEditorComponent
+            Layout.fillHeight: true
+            Layout.fillWidth: !!core.script
+            Layout.minimumWidth: parent.width * 0.7
+        }
+    }
+
+    Component {
+        id: entityEditorComponent
+
+        EntityEditPage {
+            entity: page.indexes.length === 1 && entitiesList.model.length
+                    > page.indexes[0] ? entitiesList.model[page.indexes[0]] : null
+
+            onEditEntry: function (entry) {
+                if (entry.isKiscule) {
+                    core.loadScript(entry)
+                } else {
+                    popup.entry = entry
+                    popup.open()
                 }
             }
         }
     }
 
-    EntityEditPage {
-        id: entityEditPage
-        width: parent.width * 0.7
-        entity: page.indexes.length === 1 && entitiesList.model.length
-                > page.indexes[0] ? entitiesList.model[page.indexes[0]] : null
-        anchors.top: entitiesList.top
-        anchors.bottom: entitiesList.bottom
-        anchors.right: parent.right
-        anchors.rightMargin: 5
+    Component {
+        id: kisculeEditorComponent
 
-        onEditEntry: function (entry) {
-            popup.entry = entry
-            popup.open()
-        }
+        KisculeView {}
     }
 
     Button {
@@ -92,7 +116,10 @@ Item {
         anchors.top: parent.top
         anchors.margins: 5
 
-        onClicked: core.clearEntities()
+        onClicked: {
+            core.clearScript()
+            core.clearEntities()
+        }
     }
 
     TextField {

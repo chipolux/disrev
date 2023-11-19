@@ -19,6 +19,7 @@ Core::Core(QObject *parent)
     , m_searchResultDebounce(new QTimer(this))
     , m_entry(nullptr)
     , m_entities()
+    , m_script(nullptr)
 {
     m_rm->moveToThread(m_rmThread);
     connect(m_rmThread, &QThread::finished, m_rm, &QObject::deleteLater);
@@ -187,6 +188,7 @@ void Core::clear()
         emit sortOrderChanged();
         clearEntities();
         clearObjects();
+        clearScript();
     }
 }
 
@@ -299,5 +301,23 @@ void Core::saveObjects()
             objects.append(obj->pod());
         }
         emit startSavingObjects(m_entry, objects);
+    }
+}
+
+void Core::loadScript(const decl::EntityEntry *entry)
+{
+    if (m_script) {
+        m_script->deleteLater();
+    }
+    m_script = new kiscule::Root(entry, this);
+    emit scriptChanged();
+}
+
+void Core::clearScript()
+{
+    if (m_script) {
+        m_script->deleteLater();
+        m_script = nullptr;
+        emit scriptChanged();
     }
 }

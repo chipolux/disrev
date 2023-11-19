@@ -7,6 +7,7 @@
 #include "bwm.h"
 #include "decl.h"
 #include "entry.h"
+#include "kiscule.h"
 #include "qtutils.h"
 #include "resourcemanager.h"
 
@@ -22,6 +23,7 @@ class Core : public QObject
     Q_PROPERTY(QList<Entry *> results READ results NOTIFY resultsChanged)
     Q_PROPERTY(QList<decl::Entity *> entities READ entities NOTIFY entitiesChanged)
     Q_PROPERTY(QList<bwm::Object *> objects READ objects NOTIFY objectsChanged)
+    Q_PROPERTY(kiscule::Root *script READ script NOTIFY scriptChanged)
 
   public:
     enum SortOrder {
@@ -46,6 +48,7 @@ class Core : public QObject
     const QList<Entry *> &results() const { return m_results; }
     const QList<decl::Entity *> &entities() const { return m_entities; }
     const QList<bwm::Object *> &objects() const { return m_objects; }
+    kiscule::Root *script() const { return m_script; }
 
   signals:
     void startLoadingIndexes();
@@ -63,6 +66,7 @@ class Core : public QObject
     void objectsChanged();
     void startSavingObject(Entry *entry, bwm::PODObject obj);
     void startSavingObjects(Entry *entry, QList<bwm::PODObject> objects);
+    void scriptChanged();
 
   public slots:
     void launchGame();
@@ -76,6 +80,8 @@ class Core : public QObject
     void clearObjects();
     void saveObject(bwm::Object *obj);
     void saveObjects();
+    void loadScript(const decl::EntityEntry *entry);
+    void clearScript();
 
   private slots:
     void rmStatusChanged(bool busy, QString error);
@@ -102,6 +108,8 @@ class Core : public QObject
     Entry *m_entry;
     QList<decl::Entity *> m_entities;
     QList<bwm::Object *> m_objects;
+
+    kiscule::Root *m_script;
 };
 
 #endif // CORE_H
