@@ -100,7 +100,7 @@ namespace bwm
 using Group = QList<quint32>;
 using LabeledGroup = QPair<quint32, QList<quint32>>;
 
-/* Matrices are stored as a set of 12 single precision floats like so:
+/* Matrices are stored as a set of 12 single precision floats in row-major order:
  *    ┌           ┐┌    ┐
  *  x │ 0   1   2 ││  3 │
  *  y │ 4   5   6 ││  7 │
@@ -126,7 +126,8 @@ struct PODMesh {
     quint32 vio;  // vertex index offset
     quint32 vic;  // vertex index count
     quint32 vc;   // vertex count
-    char unk3[5]; // mystery data (expect 03 00 00 00 01)
+    quint32 unk3; // mystery data (expect 03 00 00 00)
+    quint8 unk4;  // mystery data (expect 01)
 };
 QDebug operator<<(QDebug d, const PODMesh &m);
 
@@ -138,6 +139,7 @@ struct PODInstance {
     qint16 unk2;
 };
 QDebug operator<<(QDebug d, const PODInstance &m);
+QString vert(float v[3]);
 
 struct PODObject {
     qint64 offset;
@@ -150,7 +152,8 @@ struct PODObject {
     QList<PODMatrix> matrices;
     QList<PODInstance> instances;
 };
-QDebug operator<<(QDebug d, const PODObject &m);
+QDebug operator<<(QDebug d, const PODObject &o);
+QString matName(const PODObject &obj);
 
 class Matrix : public QObject
 {
@@ -284,6 +287,8 @@ class Object : public QObject
     QList<Matrix *> m_matrices;
     QList<Instance *> m_instances;
 };
+
+void setScale(const float &scale, PODMatrix *matrix);
 
 QString parse(const QByteArray &input, QList<PODObject> &objects);
 

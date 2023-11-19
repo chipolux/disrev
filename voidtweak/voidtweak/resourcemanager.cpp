@@ -28,14 +28,22 @@ void ResourceManager::loadIndexes()
         entryCount += c->entries.count();
     }
     qDebug() << "Finished loading...";
+    // const QStringList names = {
+    //     u"curator_p_lowchaos.bwm"_qs,        u"curator_p_highchaos.bwm"_qs,
+    //     u"madinv_streets_p_lowchaos.bwm"_qs, u"madinv_streets_p_highchaos.bwm"_qs,
+    //     u"institute_p_lowchaos.bwm"_qs,      u"institute_p_highchaos.bwm"_qs,
+    //     u"eotw_p_lowchaos.bwm"_qs,           u"eotw_p_highchaos.bwm"_qs,
+    //     u"dunwall_escape_streets_p.bwm"_qs,
+    // };
     // for (const auto c : m_containers) {
     //     for (const auto e : c->entries) {
-    //         if (e->dstSuffix() == u"bwm"_qs) {
+    //         if (e->dstSuffix() == u"bwm"_qs /*&& names.contains(e->dstFileName())*/) {
     //             qInfo() << "Loading" << e->dstFileName();
     //             loadBwm(e);
     //         }
     //     }
     // }
+    // qInfo() << "Done loading bwm objects...";
     emit indexesLoaded(m_containers.count(), entryCount);
     emit statusChanged(false, {});
 }
