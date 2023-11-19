@@ -206,8 +206,7 @@ Item {
 
     FileDialog {
         id: fileDialog
-        currentFolder: StandardPaths.writableLocation(
-                           StandardPaths.HomeLocation)
+        currentFolder: settings.lastFolder
 
         property Entry entry
 
@@ -226,12 +225,21 @@ Item {
                 fileDialog.currentFolder = fileDialog.selectedFile
             }
         }
+        onCurrentFolderChanged: settings.lastFolder = currentFolder
     }
 
     FolderDialog {
         id: folderDialog
-        currentFolder: StandardPaths.writableLocation(
-                           StandardPaths.HomeLocation)
+        currentFolder: settings.lastFolder
+
         onAccepted: core.exportAllEntries(folderDialog.selectedFolder)
+        onCurrentFolderChanged: settings.lastFolder = currentFolder
+    }
+
+    Settings {
+        id: settings
+
+        property url lastFolder: StandardPaths.writableLocation(
+                                     StandardPaths.HomeLocation)
     }
 }
