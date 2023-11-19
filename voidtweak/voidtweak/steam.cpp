@@ -20,38 +20,75 @@ QString steamDir()
     return result;
 }
 
-QString d2Dir()
+QString appDir(const QString &appId)
+{
+    QString result;
+    const QVariantMap libraryFolders = loadLibraryFolders();
+    for (const auto &folder : libraryFolders) {
+        const auto &path = folder.toMap().value(u"path"_qs).toString();
+        const auto &apps = folder.toMap().value(u"apps"_qs);
+        if (apps.toMap().contains(appId)) {
+            const auto manifest = load(u"%1/steamapps/appmanifest_%2.acf"_qs.arg(path, appId))
+                                      .value(u"AppState"_qs)
+                                      .toMap();
+            const auto installDir = manifest.value(u"installdir"_qs).toString();
+            if (!installDir.isEmpty()) {
+                result = u"%1/steamapps/common/%2"_qs.arg(path, installDir);
+            }
+            break;
+        }
+    }
+    return result;
+}
+
+QString dis2Dir()
 {
     QSettings settings;
-    QString result = settings.value(u"steam/dis2dir"_qs).toString();
+    QString result = settings.value(u"steam/dis2Dir"_qs).toString();
     if (result.isEmpty()) {
-        const QVariantMap libraryFolders = loadLibraryFolders();
-        for (const auto &folder : libraryFolders) {
-            const auto &path = folder.toMap().value(u"path"_qs).toString();
-            const auto &apps = folder.toMap().value(u"apps"_qs);
-            if (apps.toMap().contains(DIS2_APPID)) {
-                result =
-                    QDir::toNativeSeparators(u"%1/steamapps/common/Dishonored2/base"_qs.arg(path));
-                break;
-            }
-        }
+        result = appDir(DIS2_APPID);
+    }
+    return result;
+}
+
+QString dis2Exe() {
+    const auto gameDir = dis2Dir();
+    if (gameDir.isEmpty()) {
+        return {};
+    }
+    return u"%1/Dishonored2.exe"_qs.arg(gameDir);
+}
+
+QString dotoDir()
+{
+    QSettings settings;
+    QString result = settings.value(u"steam/dotoDir"_qs).toString();
+    if (result.isEmpty()) {
+        result = appDir(DOTO_APPID);
     }
     return result;
 }
 
 QVariantMap loadLibraryFolders()
 {
+    QVariantMap result = load(u"%1/config/libraryfolders.vdf"_qs.arg(steamDir()));
+    return result.value(u"libraryfolders"_qs).toMap();
+}
+
+QVariantMap load(const QString &path)
+{
     QVariantMap result;
-    QFile f(QDir::toNativeSeparators(u"%1/config/libraryfolders.vdf"_qs.arg(steamDir())));
+    QFile f(path);
     if (!f.open(QFile::ReadOnly)) {
-        qWarning() << "Failed to open libraryfolders.vdf:" << f.fileName();
+        qWarning() << "Failed to open:" << f.fileName();
         return result;
     }
     const QString error = parse(f.readAll(), result);
     if (!error.isEmpty()) {
-        qWarning() << "Failed to parse libraryfolders.vdf:" << error;
+        qWarning() << "Failed to parse:" << f.fileName() << error;
     }
-    return result.value(u"libraryfolders"_qs).toMap();
+    f.close();
+    return result;
 }
 
 QString parse(const QByteArray &data, QVariantMap &output)
@@ -128,7 +165,6 @@ QString parse(const QByteArray &data, QVariantMap &output)
     if (!stack.isEmpty()) {
         return u"Leftover stack at EOF: %1"_qs.arg(stack.count());
     }
-    qDebug() << "Parsed steam kv:" << output;
     return {};
 }
 

@@ -50,12 +50,12 @@ void ResourceManager::loadIndexes()
 
 bool ResourceManager::loadMasterIndex()
 {
-    const QString d2Dir = steam::d2Dir();
-    if (d2Dir.isEmpty()) {
+    const QString appDir = steam::dis2Dir();
+    if (appDir.isEmpty()) {
         emit statusChanged(false, u"Failed to find Dishonored 2 install directory!"_qs);
         return false;
     }
-    QDir dir(d2Dir);
+    QDir dir(appDir + u"/base"_qs);
     if (!dir.exists(u"master.index"_qs)) {
         emit statusChanged(false, u"No master.index found in %1"_qs.arg(dir.absolutePath()));
         return false;

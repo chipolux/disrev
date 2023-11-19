@@ -1,6 +1,9 @@
 #include "core.h"
 
+#include <QProcess>
 #include <algorithm>
+
+#include "steam.h"
 
 Core::Core(QObject *parent)
     : QObject{parent}
@@ -85,6 +88,16 @@ const QString Core::sortOrderName() const
         break;
     }
     return name;
+}
+
+void Core::launchGame()
+{
+    const auto exePath = steam::dis2Exe();
+    if (exePath.isEmpty()) {
+        return;
+    }
+
+    QProcess::execute(exePath, {u"+com_showLoadingScreen 0"_qs});
 }
 
 void Core::sortResults(const Core::SortOrder &order)

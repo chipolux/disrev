@@ -65,6 +65,7 @@ class Core : public QObject
     void startSavingObjects(Entry *entry, QList<bwm::PODObject> objects);
 
   public slots:
+    void launchGame();
     void sortResults(const Core::SortOrder &order);
     void loadIndexes();
     void search(const QString &query);
